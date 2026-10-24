@@ -14,7 +14,7 @@ export default function LoginPage() {
     // shouldCreateUser: false keeps login from becoming a back door around invites.
     await supabaseBrowser().auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/auth/confirm` },
+      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     // Same message either way, so the form doesn't reveal who has an account.
     setStatus("sent");

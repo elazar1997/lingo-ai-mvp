@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!claimed) return apiError("INVALID_INVITE");
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${env().APP_URL}/auth/confirm`,
+    redirectTo: `${env().APP_URL}/auth/callback`,
   });
   if (inviteError || !invited.user) {
     // Give the code back so a typo in the email doesn't burn the invite.

@@ -30,9 +30,8 @@ The booked cost per call is the larger of the client-reported token cost and the
 
 1. **Supabase**: create a project, then run the migration in `supabase/migrations` (SQL editor, or `npx supabase db push`).
    - Authentication > Sign In / Providers > Email: turn **off** "Allow new users to sign up". Accounts are created only through invites.
-   - Authentication > URL Configuration: Site URL = your app URL; add `<APP_URL>/auth/confirm` to Redirect URLs.
-   - Authentication > Emails: in the **Invite user** and **Magic Link** templates, point the link to
-     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (use `type=magiclink` in the Magic Link template).
+   - Authentication > URL Configuration: Site URL = your app URL; add `<APP_URL>/**` to Redirect URLs.
+   - Email templates can stay as they are: `/auth/callback` handles Supabase's default links.
 2. **OpenAI**: create a dedicated project, set its monthly budget, and create a key there.
 3. **Env vars**: copy `.env.example` to `.env.local` and fill it in. On Vercel, add the same variables and mark secrets as Sensitive.
 4. **Invite someone**: `node --env-file=.env.local scripts/create-invite.mjs friend@example.com "beta wave 1"`.
