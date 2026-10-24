@@ -49,7 +49,7 @@ export default function AuthCallback() {
       <Logo />
       {failed ? (
         <>
-          <p>הקישור לא תקין או שפג תוקפו.</p>
+          <p>הקישור לא תקין או שכבר השתמשו בו. כל קישור עובד פעם אחת, ורק בדפדפן שממנו ביקשת אותו. אפשר גם להיכנס עם הקוד מהמייל.</p>
           <a href="/login" className="text-neon-green underline">
             לשלוח קישור חדש
           </a>
