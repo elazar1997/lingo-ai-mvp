@@ -1,0 +1,49 @@
+"use client";
+
+import { useState } from "react";
+import { Avatar } from "@/components/avatar";
+import { Button } from "@/components/ui";
+import { PERSONAS, type PersonaId } from "@/lib/personas";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+
+export function PersonaPicker({ initial, disabled }: { initial: PersonaId; disabled: boolean }) {
+  const [selected, setSelected] = useState<PersonaId>(initial);
+
+  async function choose(id: PersonaId) {
+    setSelected(id);
+    const supabase = supabaseBrowser();
+    const { data } = await supabase.auth.getUser();
+    if (data.user) await supabase.from("profiles").update({ preferred_persona: id }).eq("id", data.user.id);
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="font-bold">עם מי מדברים היום?</h2>
+      <div className="grid grid-cols-2 gap-3">
+        {Object.values(PERSONAS).map((p) => {
+          const active = p.id === selected;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => choose(p.id)}
+              aria-pressed={active}
+              className={`flex flex-col items-center gap-2 rounded-2xl border bg-surface p-4 text-center transition ${
+                active ? (p.accent === "purple" ? "glow-purple border-transparent" : "glow-green border-transparent") : "border-line"
+              }`}
+            >
+              <Avatar persona={p.id} state={active ? "speaking" : "idle"} size={88} />
+              <span className="text-lg font-bold">{p.name}</span>
+              <span className="text-xs text-muted">{p.taglineHe}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-sm text-muted">{PERSONAS[selected].descriptionHe}</p>
+      {/* The live conversation screen is built in stage 3. */}
+      <Button tone={PERSONAS[selected].accent} disabled>
+        {disabled ? "נגמרו הדקות להיום" : `דברו עם ${PERSONAS[selected].name} (בקרוב)`}
+      </Button>
+    </section>
+  );
+}

@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lingo AI (MVP)
 
-## Getting Started
+Spanish conversation practice for Hebrew speakers, with two virtual teachers (Lucía and Vale) and real-time voice.
+Invite-only beta, 18+.
 
-First, run the development server:
+Stack: Next.js 16 on Vercel, Supabase (Auth + Postgres), OpenAI Realtime API over WebRTC.
+
+## How a conversation is secured
+
+1. The browser asks `/api/realtime/session` to start a call (Supabase session cookie).
+2. The server checks the daily quota and the monthly budget in one Postgres transaction (`start_session`), and reserves the worst-case cost.
+3. The server asks OpenAI for a client secret that lives 60 seconds, with the persona prompt and voice locked in. The browser gets only that secret, never the API key.
+4. The browser connects to OpenAI directly over WebRTC.
+5. On hang-up, `/api/realtime/end` bills the real time (capped by the server clock), books the cost, and stores the transcript encrypted with AES-256-GCM.
+
+## Limits
+
+| Limit | Default | Where |
+| --- | --- | --- |
+| Talk time per user per day (Israel time) | 15 min | `DAILY_LIMIT_MINUTES` |
+| Longest single call | 10 min | `MAX_SESSION_MINUTES` |
+| Monthly API budget | $50 | `MONTHLY_BUDGET_USD` |
+| New calls blocked at | 90% of budget ($45) | `BUDGET_BLOCK_RATIO` |
+| Cost booked per minute (at least) | $0.10 | `RESERVE_USD_PER_MINUTE` |
+| Transcript retention | 30 days | `pg_cron` job in the migration |
+
+The booked cost per call is the larger of the client-reported token cost and the per-minute estimate, so the cap holds even if a client lies. As a second safety net, set a budget limit on the OpenAI project that owns the key.
+
+## Setup
+
+1. **Supabase**: create a project, then run the migration in `supabase/migrations` (SQL editor, or `npx supabase db push`).
+   - Authentication > Sign In / Providers > Email: turn **off** "Allow new users to sign up". Accounts are created only through invites.
+   - Authentication > URL Configuration: Site URL = your app URL; add `<APP_URL>/auth/confirm` to Redirect URLs.
+   - Authentication > Emails: in the **Invite user** and **Magic Link** templates, point the link to
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (use `type=magiclink` in the Magic Link template).
+2. **OpenAI**: create a dedicated project, set its monthly budget, and create a key there.
+3. **Env vars**: copy `.env.example` to `.env.local` and fill it in. On Vercel, add the same variables and mark secrets as Sensitive.
+4. **Invite someone**: `node --env-file=.env.local scripts/create-invite.mjs friend@example.com "beta wave 1"`.
+
+## Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev        # local dev server
+npm test           # unit tests (crypto, cost)
+npm run lint
+npm run typecheck
+npm run build
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

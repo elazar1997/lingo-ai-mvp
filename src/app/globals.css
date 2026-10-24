@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Lingo AI: dark by default, neon purple and green for calls to action. */
+@theme {
+  --color-bg: #0b0b14;
+  --color-surface: #151526;
+  --color-surface-2: #1e1e35;
+  --color-line: #2c2c4a;
+  --color-ink: #f2f2fa;
+  --color-muted: #9a9ab8;
+  --color-neon-purple: #b14bff;
+  --color-neon-green: #39ff88;
+  --color-danger: #ff5c7a;
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@utility glow-purple {
+  box-shadow: 0 0 0 1px var(--color-neon-purple), 0 0 24px -4px var(--color-neon-purple);
+}
+
+@utility glow-green {
+  box-shadow: 0 0 0 1px var(--color-neon-green), 0 0 24px -4px var(--color-neon-green);
 }
