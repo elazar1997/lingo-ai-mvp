@@ -13,7 +13,7 @@ const csp = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "media-src 'self' blob:",
-  `connect-src 'self' ${supabaseUrl} ${supabaseWs} https://api.openai.com`,
+  `connect-src 'self' ${supabaseUrl} ${supabaseWs}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

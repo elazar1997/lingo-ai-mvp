@@ -128,21 +128,6 @@ export function CallScreen({ persona }: { persona: Persona }) {
       return;
     }
 
-    const res = await fetch("/api/realtime/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personaId: persona.id }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      teardown();
-      setError(errorHe(data.error));
-      setPhase("error");
-      return;
-    }
-    session.current = { id: data.sessionId, startedAt: Date.now() };
-    setSecondsLeft(data.allowedSeconds);
-
     try {
       const peer = new RTCPeerConnection();
       pc.current = peer;
@@ -172,17 +157,28 @@ export function CallScreen({ persona }: { persona: Persona }) {
 
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
-      const sdp = await fetch("https://api.openai.com/v1/realtime/calls", {
+
+      // Our server checks quota and budget and passes the offer on to OpenAI.
+      const res = await fetch("/api/realtime/session", {
         method: "POST",
-        body: offer.sdp,
-        headers: { Authorization: `Bearer ${data.clientSecret}`, "Content-Type": "application/sdp" },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personaId: persona.id, sdp: offer.sdp }),
       });
-      if (!sdp.ok) throw new Error(`sdp ${sdp.status}`);
-      await peer.setRemoteDescription({ type: "answer", sdp: await sdp.text() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        teardown();
+        setError(errorHe(data.error));
+        setPhase("error");
+        return;
+      }
+      session.current = { id: data.sessionId, startedAt: Date.now() };
+      setSecondsLeft(data.allowedSeconds);
+      await peer.setRemoteDescription({ type: "answer", sdp: data.sdp });
       setPhase("live");
     } catch {
       setError(errorHe("UPSTREAM_ERROR"));
-      await hangUp();
+      if (session.current) await hangUp();
+      else teardown();
       setPhase("error");
     }
   }
