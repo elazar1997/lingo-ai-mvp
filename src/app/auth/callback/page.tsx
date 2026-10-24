@@ -8,9 +8,10 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 
 const TYPES: EmailOtpType[] = ["invite", "magiclink", "email", "signup"];
 
-// Landing page for links in Supabase's default email templates. Invites arrive with
-// tokens in the URL fragment (never sent to the server), magic links with ?code= (PKCE),
-// and custom templates with ?token_hash=. All three end in a session cookie.
+// Landing page for links in Supabase's default email templates. Invites and /login's
+// links (implicit flow) arrive with tokens in the URL fragment (never sent to the
+// server), PKCE magic links with ?code=, and custom templates with ?token_hash=.
+// All of them end in a session cookie.
 export default function AuthCallback() {
   const router = useRouter();
   const [failed, setFailed] = useState(false);
@@ -49,7 +50,7 @@ export default function AuthCallback() {
       <Logo />
       {failed ? (
         <>
-          <p>הקישור לא תקין או שפג תוקפו.</p>
+          <p>הקישור לא תקין או שכבר השתמשו בו. כל קישור עובד פעם אחת בלבד, אז צריך לבקש קישור חדש.</p>
           <a href="/login" className="text-neon-green underline">
             לשלוח קישור חדש
           </a>

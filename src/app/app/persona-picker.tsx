@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Avatar } from "@/components/avatar";
-import { Button } from "@/components/ui";
+import { Button, ButtonLink } from "@/components/ui";
 import { PERSONAS, type PersonaId } from "@/lib/personas";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
@@ -40,10 +40,15 @@ export function PersonaPicker({ initial, disabled }: { initial: PersonaId; disab
         })}
       </div>
       <p className="text-sm text-muted">{PERSONAS[selected].descriptionHe}</p>
-      {/* The live conversation screen is built in stage 3. */}
-      <Button tone={PERSONAS[selected].accent} disabled>
-        {disabled ? "נגמרו הדקות להיום" : `דברו עם ${PERSONAS[selected].name} (בקרוב)`}
-      </Button>
+      {disabled ? (
+        <Button tone={PERSONAS[selected].accent} disabled>
+          נגמרו הדקות להיום
+        </Button>
+      ) : (
+        <ButtonLink tone={PERSONAS[selected].accent} href={`/app/call?persona=${selected}`}>
+          לדבר עם {PERSONAS[selected].name}
+        </ButtonLink>
+      )}
     </section>
   );
 }
