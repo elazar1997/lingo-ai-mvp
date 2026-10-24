@@ -6,11 +6,12 @@ import { isPersonaId } from "@/lib/personas";
 import { buildInstructions, personaVoice } from "@/lib/personas.server";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 
-const Body = z.object({ personaId: z.string().refine(isPersonaId) });
+const Body = z.object({ personaId: z.string().refine(isPersonaId), sdp: z.string().min(1).max(20_000) });
 
-// Opens a conversation: checks quota and budget in one transaction, then mints a
-// short-lived OpenAI client secret with the prompt and voice locked in server-side.
-// The browser never sees the API key and cannot change the instructions.
+// Opens a conversation: checks quota and budget in one transaction, then forwards the
+// browser's WebRTC offer to OpenAI with the prompt and voice locked in server-side, and
+// returns OpenAI's answer. The browser never talks to the OpenAI API or sees a key, and
+// cannot change the instructions.
 export async function POST(request: Request) {
   const user = await requireUser();
   if (!user) return apiError("UNAUTHENTICATED");
@@ -41,35 +42,38 @@ export async function POST(request: Request) {
     .single<{ session_id: string; allowed_seconds: number }>();
   if (startError || !started) return apiError(dbErrorCode(startError?.message));
 
-  const res = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+  const form = new FormData();
+  form.set("sdp", parsed.data.sdp);
+  form.set(
+    "session",
+    JSON.stringify({
+      type: "realtime",
+      model: e.REALTIME_MODEL,
+      instructions: buildInstructions(personaId, {
+        level: profile.spanish_level,
+        displayName: profile.display_name,
+      }),
+      audio: {
+        input: {
+          transcription: { model: e.TRANSCRIBE_MODEL, language: "es" },
+          turn_detection: { type: "server_vad" },
+        },
+        output: { voice: personaVoice(personaId) },
+      },
+    }),
+  );
+
+  const res = await fetch("https://api.openai.com/v1/realtime/calls", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${e.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
       // Hashed user id lets OpenAI's abuse systems tell users apart without personal data.
       "OpenAI-Safety-Identifier": sha256Hex(user.id),
     },
-    body: JSON.stringify({
-      expires_after: { anchor: "created_at", seconds: 60 },
-      session: {
-        type: "realtime",
-        model: e.REALTIME_MODEL,
-        instructions: buildInstructions(personaId, {
-          level: profile.spanish_level,
-          displayName: profile.display_name,
-        }),
-        audio: {
-          input: {
-            transcription: { model: e.TRANSCRIBE_MODEL, language: "es" },
-            turn_detection: { type: "server_vad" },
-          },
-          output: { voice: personaVoice(personaId) },
-        },
-      },
-    }),
-  });
+    body: form,
+  }).catch(() => null);
 
-  if (!res.ok) {
+  if (!res?.ok) {
     // Release the reservation right away so a failed start doesn't eat quota or budget.
     await admin.rpc("end_session", {
       p_user: user.id,
@@ -78,15 +82,14 @@ export async function POST(request: Request) {
       p_reported_usd: 0,
       p_usd_per_minute: e.RESERVE_USD_PER_MINUTE,
     });
-    console.error("realtime client secret failed", res.status);
+    const detail = res ? (await res.text().catch(() => "")).slice(0, 500) : "network error";
+    console.error("realtime call failed", res?.status, detail);
     return apiError("UPSTREAM_ERROR");
   }
 
-  const secret = (await res.json()) as { value: string; expires_at?: number };
   return apiOk({
     sessionId: started.session_id,
     allowedSeconds: started.allowed_seconds,
-    clientSecret: secret.value,
-    expiresAt: secret.expires_at ?? null,
+    sdp: await res.text(),
   });
 }
