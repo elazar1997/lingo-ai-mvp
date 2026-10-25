@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { Logo } from "@/components/ui";
 import { PersonaPicker } from "@/app/app/persona-picker";
 import { DeleteAccount } from "@/app/app/delete-account";
+import { LevelPicker } from "@/app/app/level-picker";
+import { pickerLevel } from "@/lib/levels";
 import { requireUser, supabaseUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +16,7 @@ export default async function AppHome() {
   const supabase = await supabaseUser();
 
   const [{ data: profile }, { data: progress }, { data: today }] = await Promise.all([
-    supabase.from("profiles").select("display_name, preferred_persona").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("display_name, preferred_persona, spanish_level").eq("id", user.id).maybeSingle(),
     supabase.from("progress").select("xp_total, streak_days").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("sessions")
@@ -39,6 +41,8 @@ export default async function AppHome() {
         <h1 className="text-2xl font-bold">¡Hola{profile?.display_name ? `, ${profile.display_name}` : ""}!</h1>
         <p className="text-muted">נשארו לך היום {minutesLeft} דקות שיחה מתוך {DAILY_MINUTES}.</p>
       </div>
+
+      <LevelPicker initial={pickerLevel(profile?.spanish_level)} />
 
       <PersonaPicker initial={profile?.preferred_persona === "vale" ? "vale" : "lucia"} disabled={minutesLeft === 0} />
 
