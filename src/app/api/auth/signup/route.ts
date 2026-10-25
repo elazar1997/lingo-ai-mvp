@@ -38,7 +38,9 @@ export async function POST(request: Request) {
   if (inviteError || !invited.user) {
     // Give the code back so a typo in the email doesn't burn the invite.
     await admin.from("invites").update({ used_at: null }).eq("code_hash", codeHash);
-    // Same answer whether or not the email already has an account.
+    // The email service's hourly limit is worth reporting, so the person tries again later.
+    if (inviteError?.status === 429) return apiError("EMAIL_RATE_LIMIT");
+    // Otherwise the same answer whether or not the email already has an account.
     return apiOk({ ok: true });
   }
 
