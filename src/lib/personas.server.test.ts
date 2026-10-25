@@ -43,6 +43,10 @@ describe("prompt content", () => {
     }
   });
 
+  it("keeps the persona's background apart from the learner's", () => {
+    expect(buildInstructions("vale", { level: "beginner" })).toContain("is yours, not the learner's");
+  });
+
   it("gives Vale Mexican slang and Lucía none", () => {
     expect(buildInstructions("vale", { level: "beginner" })).toContain("¡no manches!");
     expect(buildInstructions("lucia", { level: "beginner" })).not.toContain("güey");
