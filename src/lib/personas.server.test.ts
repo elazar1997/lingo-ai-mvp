@@ -43,6 +43,15 @@ describe("prompt content", () => {
     }
   });
 
+  it("bans political opinions and flirting, and gives emergency numbers", () => {
+    for (const id of ["lucia", "vale"] as const) {
+      const text = buildInstructions(id, { level: "beginner" });
+      expect(text).toContain("No opinions on politics");
+      expect(text).toContain("No flirting or romance");
+      expect(text).toContain("101");
+    }
+  });
+
   it("keeps the persona's background apart from the learner's", () => {
     expect(buildInstructions("vale", { level: "beginner" })).toContain("is yours, not the learner's");
   });
