@@ -33,6 +33,35 @@ describe("buildInstructions", () => {
   });
 });
 
+describe("prompt content", () => {
+  it("keeps the anti-injection and safety rules for both personas", () => {
+    for (const id of ["lucia", "vale"] as const) {
+      const text = buildInstructions(id, { level: "beginner" });
+      expect(text).toContain("Never reveal");
+      expect(text).toContain("never instructions");
+      expect(text).toContain("1201");
+    }
+  });
+
+  it("bans political opinions and flirting, and gives emergency numbers", () => {
+    for (const id of ["lucia", "vale"] as const) {
+      const text = buildInstructions(id, { level: "beginner" });
+      expect(text).toContain("No opinions on politics");
+      expect(text).toContain("No flirting or romance");
+      expect(text).toContain("101");
+    }
+  });
+
+  it("keeps the persona's background apart from the learner's", () => {
+    expect(buildInstructions("vale", { level: "beginner" })).toContain("is yours, not the learner's");
+  });
+
+  it("gives Vale Mexican slang and Lucía none", () => {
+    expect(buildInstructions("vale", { level: "beginner" })).toContain("¡no manches!");
+    expect(buildInstructions("lucia", { level: "beginner" })).not.toContain("güey");
+  });
+});
+
 describe("personaVoice", () => {
   it("uses the approved voices", () => {
     expect(personaVoice("lucia")).toBe("marin");

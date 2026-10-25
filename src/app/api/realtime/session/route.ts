@@ -56,7 +56,9 @@ export async function POST(request: Request) {
       audio: {
         input: {
           transcription: { model: e.TRANSCRIBE_MODEL, language: "es" },
-          turn_detection: { type: "server_vad" },
+          // Semantic VAD waits for the end of a thought, not just a pause, and "low"
+          // eagerness gives learners time to search for words before the persona replies.
+          turn_detection: { type: "semantic_vad", eagerness: "low" },
         },
         output: { voice: personaVoice(personaId) },
       },

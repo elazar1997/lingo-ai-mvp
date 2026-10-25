@@ -35,6 +35,7 @@ The booked cost per call is the larger of the client-reported token cost and the
 2. **OpenAI**: create a dedicated project, set its monthly budget, and create a key there.
 3. **Env vars**: copy `.env.example` to `.env.local` and fill it in. On Vercel, add the same variables and mark secrets as Sensitive.
 4. **Invite someone**: `node --env-file=.env.local scripts/create-invite.mjs friend@example.com "beta wave 1"`.
+5. **Persona tests** (optional): set `PERSONA_TEST_KEY` (24+ random characters, Sensitive, Preview only), then open `<PREVIEW_URL>/api/admin/persona-test?key=...`. A second model plays a learner through each scenario in `src/lib/persona-test.ts` and the endpoint returns the transcripts. Add `&persona=vale` or `&scenario=injection` to run one.
 
 ## Scripts
 
