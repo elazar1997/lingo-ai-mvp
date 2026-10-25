@@ -4,6 +4,7 @@ import { PersonaPicker } from "@/app/app/persona-picker";
 import { DeleteAccount } from "@/app/app/delete-account";
 import { LevelPicker } from "@/app/app/level-picker";
 import { pickerLevel } from "@/lib/levels";
+import { isAdmin } from "@/lib/env";
 import { requireUser, supabaseUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function AppHome() {
 
   const usedSeconds = (today ?? []).reduce((s, r) => s + (r.billed_seconds ?? r.max_seconds), 0);
   const streak = streakToShow(progress?.streak_days ?? 0, progress?.last_active_date ?? null);
+  const admin = isAdmin(user.email);
   const minutesLeft = Math.max(0, Math.floor(DAILY_MINUTES - usedSeconds / 60));
 
   return (
@@ -40,12 +42,16 @@ export default async function AppHome() {
 
       <div>
         <h1 className="text-2xl font-bold">¡Hola{profile?.display_name ? `, ${profile.display_name}` : ""}!</h1>
-        <p className="text-muted">נשארו לך היום {minutesLeft} דקות שיחה מתוך {DAILY_MINUTES}.</p>
+        <p className="text-muted">
+          {admin
+            ? "מצב בדיקה: אין לך מגבלת דקות יומית."
+            : `נשארו לך היום ${minutesLeft} דקות שיחה מתוך ${DAILY_MINUTES}.`}
+        </p>
       </div>
 
       <LevelPicker initial={pickerLevel(profile?.spanish_level)} />
 
-      <PersonaPicker initial={profile?.preferred_persona === "vale" ? "vale" : "lucia"} disabled={minutesLeft === 0} />
+      <PersonaPicker initial={profile?.preferred_persona === "vale" ? "vale" : "lucia"} disabled={!admin && minutesLeft === 0} />
 
       <DeleteAccount />
     </div>
