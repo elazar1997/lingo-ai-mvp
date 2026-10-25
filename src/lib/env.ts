@@ -24,6 +24,9 @@ const schema = z.object({
   // Comma-separated emails allowed into internal tools such as the voice comparison page.
   ADMIN_EMAILS: z.string().default(""),
   TTS_MODEL: z.string().default("gpt-4o-mini-tts"),
+  // Enables /api/admin/persona-test when set (at least 24 characters).
+  PERSONA_TEST_KEY: z.string().min(24).optional(),
+  PERSONA_TEST_MODEL: z.string().default("gpt-5-mini"),
 });
 
 export type Env = z.infer<typeof schema>;
