@@ -35,6 +35,8 @@ describe("buildInstructions", () => {
   it("gives beginners slow speech and Hebrew help, after the persona card", () => {
     const text = buildInstructions("vale", { level: "beginner" });
     expect(text).toContain("noticeably slower");
+    expect(text).toContain("Five words per sentence at most");
+    expect(text).toContain("yes/no");
     expect(text).toContain("in Hebrew");
     expect(text.indexOf("Character: Vale")).toBeLessThan(text.indexOf("Learner level: beginner"));
     expect(buildInstructions("vale", { level: "advanced" })).not.toContain("noticeably slower");
