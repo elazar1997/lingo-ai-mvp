@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { Flame, Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ButtonLink } from "@/components/ui";
 import { findLesson } from "@/content/path-es";
 import { LEVELS } from "@/lib/levels";
 import type { StoredFeedback } from "@/lib/tutor";
@@ -45,7 +46,7 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
           </>
         ) : (
           <>
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-line border-t-neon-green" />
+            <div className="size-10 animate-spin rounded-full border-4 border-white/10 border-t-neon-green" />
             <p className="text-muted">המורה בודקת את השיחה...</p>
           </>
         )}
@@ -58,24 +59,30 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-5">
       <header className="flex flex-col items-center gap-2 pt-2 text-center">
-        <p className="text-sm text-muted">
+        <p className="text-small text-muted">
           {lesson ? `שיעור: ${lesson.titleHe}` : f.placement ? "מבחן רמה" : "סיכום שיחה"} · {f.minutes} דקות
         </p>
         {lesson && f.lesson && <LessonResult stars={f.lesson.stars} />}
-        <p className="text-4xl font-bold text-neon-green">+{f.xp.total} XP</p>
-        <p className="text-xs text-muted">
+        <p className="font-display text-[40px] font-bold leading-none text-neon-green" dir="ltr">+{f.xp.total} XP</p>
+        <p className="flex flex-wrap items-center justify-center gap-1 text-small text-muted">
           {f.xp.base} על הדקות + {f.xp.bonus} בונוס
           {f.xp.lesson ? ` + ${f.xp.lesson} על כוכבים` : ""}
-          {progress ? ` · סה"כ ${progress.xp_total} XP · 🔥 ${progress.streak_days}` : ""}
+          {progress && (
+            <>
+              {` · סה"כ ${progress.xp_total} XP · `}
+              <Flame className="size-3.5 text-gold" fill="currentColor" />
+              {progress.streak_days}
+            </>
+          )}
         </p>
       </header>
 
       {f.placement && (
         <Card title="הרמה שלך">
-          <p className="text-2xl font-extrabold text-neon-purple">
+          <p className="font-display text-title font-bold text-neon-purple">
             {LEVELS.find((l) => l.id === f.placement?.level)?.labelHe}
           </p>
-          <p className="text-sm text-muted">עדכנו את הרמה בפרופיל. אפשר לשנות אותה בכל רגע בהגדרות.</p>
+          <p className="text-small text-muted">עדכנו את הרמה בפרופיל. אפשר לשנות אותה בכל רגע בהגדרות.</p>
         </Card>
       )}
 
@@ -87,14 +94,14 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
               return (
                 <li
                   key={w.es}
-                  className={`rounded-full px-3 py-1 text-sm font-bold ${hit ? "bg-neon-green text-bg" : "bg-surface-2 text-muted line-through"}`}
+                  className={`rounded-full px-3 py-1 font-display font-semibold ${hit ? "bg-neon-green text-bg" : "bg-white/8 text-muted line-through"}`}
                 >
                   {w.es}
                 </li>
               );
             })}
           </ul>
-          {!f.lesson.goal_met && <p className="text-sm text-muted">המשימה עוד לא הושלמה: {lesson.goalHe}</p>}
+          {!f.lesson.goal_met && <p className="text-small text-muted">המשימה עוד לא הושלמה: {lesson.goalHe}</p>}
         </Card>
       )}
 
@@ -110,7 +117,7 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
                 <span dir="ltr" className="text-left">
                   <s className="text-danger">{m.said}</s> → <b className="text-neon-green">{m.correct}</b>
                 </span>
-                <span className="text-sm text-muted">{m.why_he}</span>
+                <span className="text-small text-muted">{m.why_he}</span>
               </li>
             ))}
           </ul>
@@ -121,11 +128,11 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
         <Card title="מילים חדשות">
           <ul className="grid grid-cols-2 gap-2">
             {f.new_words.map((w, i) => (
-              <li key={i} className="flex flex-col rounded-xl bg-surface-2 px-3 py-2">
+              <li key={i} className="flex flex-col rounded-[var(--radius-btn)] bg-white/8 px-3 py-2">
                 <b dir="ltr" className="text-left">
                   {w.es}
                 </b>
-                <span className="text-sm text-muted">{w.he}</span>
+                <span className="text-small text-muted">{w.he}</span>
               </li>
             ))}
           </ul>
@@ -141,12 +148,9 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
 
       <div className="mt-auto flex flex-col gap-3">
         {lesson && f.lesson && f.lesson.stars === 0 && (
-          <Link
-            href={`/app/call?lesson=${lesson.id}`}
-            className="glow-green flex h-12 w-full items-center justify-center rounded-2xl bg-neon-green font-bold text-bg"
-          >
+          <ButtonLink tone="green" glow href={`/app/call?lesson=${lesson.id}`}>
             לנסות שוב
-          </Link>
+          </ButtonLink>
         )}
         <HomeLink label={lesson || f.placement ? "המשך במסלול" : undefined} />
       </div>
@@ -156,8 +160,8 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-2 rounded-2xl bg-surface p-4">
-      <h2 className="font-bold">{title}</h2>
+    <section className="glass flex flex-col gap-2 rounded-[var(--radius-card)] p-4">
+      <h2 className="text-body font-semibold">{title}</h2>
       {children}
     </section>
   );
@@ -165,9 +169,9 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function HomeLink({ label = "חזרה למסך הבית" }: { label?: string }) {
   return (
-    <Link href="/app" className="flex h-12 w-full items-center justify-center rounded-2xl border border-line">
+    <ButtonLink tone="ghost" href="/app">
       {label}
-    </Link>
+    </ButtonLink>
   );
 }
 
@@ -175,12 +179,10 @@ function HomeLink({ label = "חזרה למסך הבית" }: { label?: string }) 
 function LessonResult({ stars }: { stars: number }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-2xl font-extrabold">{stars > 0 ? "השיעור הושלם! 🎉" : "כמעט! 💪"}</p>
-      <p className="text-4xl tracking-widest" aria-label={`${stars} כוכבים`}>
+      <p className="font-display text-title font-bold">{stars > 0 ? "השיעור הושלם! 🎉" : "כמעט! 💪"}</p>
+      <p className="flex gap-1" aria-label={`${stars} כוכבים`}>
         {[1, 2, 3].map((i) => (
-          <span key={i} className={i <= stars ? "text-yellow-300" : "text-line"}>
-            ★
-          </span>
+          <Star key={i} className={`size-10 ${i <= stars ? "text-gold drop-shadow-[0_0_10px_rgb(255_201_74/0.6)]" : "text-line"}`} fill="currentColor" />
         ))}
       </p>
     </div>

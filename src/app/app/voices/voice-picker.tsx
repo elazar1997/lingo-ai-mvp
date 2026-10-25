@@ -48,7 +48,7 @@ export function VoicePicker() {
           → חזרה
         </Link>
       </header>
-      <p className="text-sm text-muted">לחץ על קול כדי לשמוע את אותו משפט בקולות שונים. הראשון ברשימה הוא הקול הנוכחי.</p>
+      <p className="text-sm text-muted">לוחצים על קול כדי לשמוע את אותו משפט בקולות שונים. הראשון ברשימה הוא הקול הנוכחי.</p>
 
       {(Object.keys(VOICE_CANDIDATES) as PersonaId[]).map((personaId) => (
         <section key={personaId} className="flex flex-col gap-3">

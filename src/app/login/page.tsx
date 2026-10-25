@@ -41,7 +41,7 @@ export default function LoginPage() {
     return (
       <div className="flex flex-1 flex-col justify-center gap-4 text-center">
         <Logo />
-        <h1 className="text-2xl font-bold">בדוק את האימייל שלך</h1>
+        <h1 className="text-title font-bold">נשאר רק לבדוק את האימייל</h1>
         <p className="text-muted">אם יש חשבון עם הכתובת הזו, שלחנו אליה קישור כניסה. אפשר לפתוח אותו בכל מכשיר, פעם אחת.</p>
       </div>
     );
@@ -50,9 +50,9 @@ export default function LoginPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-5">
       <Logo />
-      <h1 className="text-2xl font-bold">התחברות</h1>
+      <h1 className="text-title font-bold">התחברות</h1>
       <Field label="אימייל" name="email" type="email" required autoComplete="email" dir="ltr" />
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-small text-danger">{error}</p>}
       <Button type="submit" disabled={status === "sending"} className="mt-auto">
         {status === "sending" ? "שולח..." : "שלחו לי קישור כניסה"}
       </Button>

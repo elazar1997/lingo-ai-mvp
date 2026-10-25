@@ -10,14 +10,14 @@ export default async function WelcomePage() {
   const supabase = await supabaseUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, goal, interests, daily_goal_minutes")
+    .select("display_name, goals, interests, daily_goal_minutes")
     .eq("id", user.id)
     .maybeSingle();
   return (
     <Onboarding
       name={profile?.display_name ?? null}
       initial={{
-        goal: profile?.goal ?? null,
+        goals: profile?.goals ?? [],
         interests: profile?.interests ?? [],
         dailyGoal: profile?.daily_goal_minutes ?? 10,
       }}

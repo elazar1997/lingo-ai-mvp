@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     scenarios.map(async (scenario) => {
       const instructions = buildInstructions(
         persona,
-        { level, displayName: "Dana", goal: url.searchParams.get("goal"), interests: url.searchParams.getAll("interest") },
+        { level, displayName: "Dana", goals: url.searchParams.getAll("goal"), interests: url.searchParams.getAll("interest") },
         mode,
       );
       try {
