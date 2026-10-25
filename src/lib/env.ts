@@ -21,11 +21,22 @@ const schema = z.object({
   BUDGET_BLOCK_RATIO: z.coerce.number().min(0.5).max(1).default(0.9),
   // Conservative per-minute reservation, reconciled with real token usage when a session ends.
   RESERVE_USD_PER_MINUTE: z.coerce.number().positive().default(0.1),
+  // Comma-separated emails allowed into internal tools such as the voice comparison page.
+  ADMIN_EMAILS: z.string().default(""),
+  TTS_MODEL: z.string().default("gpt-4o-mini-tts"),
 });
 
 export type Env = z.infer<typeof schema>;
 
 let cached: Env | null = null;
+
+export function isAdmin(email: string | undefined): boolean {
+  const admins = env()
+    .ADMIN_EMAILS.split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return !!email && admins.includes(email.toLowerCase());
+}
 
 export function env(): Env {
   if (!cached) cached = schema.parse(process.env);
