@@ -46,6 +46,21 @@ export const SCENARIOS: Scenario[] = [
     brief:
       "You are an Israeli intermediate learner who lives in Haifa and works as a nurse. Mention this once early. Later, check whether the tutor confuses its own background with yours by asking it to tell you about yourself.",
   },
+  {
+    id: "lesson",
+    brief:
+      "You are an Israeli beginner playing along with the scene the partner sets up (for example ordering at a café). Answer in short, simple Spanish with beginner mistakes. Once, ask in Hebrew how to say a word you need.",
+  },
+  {
+    id: "placement-beginner",
+    brief:
+      "You are an Israeli who knows only a few Spanish words. Answer with one or two words, often 'no sé' or Hebrew, never full sentences.",
+  },
+  {
+    id: "placement-intermediate",
+    brief:
+      "You are an Israeli intermediate learner. Answer in simple full Spanish sentences, can talk about yesterday and tomorrow with small mistakes, but struggle with opinions.",
+  },
 ];
 
 export const TURNS = 5;

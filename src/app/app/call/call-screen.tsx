@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui";
+import type { Lesson } from "@/content/path-es";
 import { errorHe } from "@/lib/messages";
+import { wordsSaid } from "@/lib/mission";
 import type { Persona } from "@/lib/personas";
 import { avatarMood, initialCallState, reduceEvent } from "@/lib/realtime-events";
 
@@ -14,7 +17,15 @@ type Phase = "ready" | "connecting" | "live" | "ending" | "ended" | "error";
 // Seconds before the end at which the persona is asked to wrap up.
 const WRAP_UP_AT = 45;
 
-export function CallScreen({ persona }: { persona: Persona }) {
+export function CallScreen({
+  persona,
+  lesson,
+  placement = false,
+}: {
+  persona: Persona;
+  lesson?: Lesson;
+  placement?: boolean;
+}) {
   const [phase, setPhase] = useState<Phase>("ready");
   const [error, setError] = useState<string | null>(null);
   const [state, dispatch] = useReducer(reduceEvent, initialCallState);
@@ -167,7 +178,7 @@ export function CallScreen({ persona }: { persona: Persona }) {
       const res = await fetch("/api/realtime/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personaId: persona.id, sdp: offer.sdp }),
+        body: JSON.stringify({ personaId: persona.id, lessonId: lesson?.id, placement, sdp: offer.sdp }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -194,6 +205,12 @@ export function CallScreen({ persona }: { persona: Persona }) {
     setMuted(next);
   }
 
+  const said = useMemo(
+    () => (lesson ? wordsSaid(lesson, state.turns.filter((t) => t.role === "user").map((t) => t.text)) : []),
+    [lesson, state.turns],
+  );
+  const missionReady = !!lesson && said.length >= lesson.need;
+
   const mood = phase === "connecting" ? "thinking" : avatarMood(state);
   const mm = String(Math.floor(secondsLeft / 60));
   const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -211,8 +228,44 @@ export function CallScreen({ persona }: { persona: Persona }) {
         )}
       </header>
 
+      {lesson && (
+        <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-3">
+          <div className="flex items-center justify-between">
+            <b>{lesson.titleHe}</b>
+            <span className="text-xs text-muted tabular-nums">
+              {said.length}/{lesson.need} מילים
+            </span>
+          </div>
+          <p className="text-sm text-muted">{lesson.goalHe}</p>
+          <ul className="flex flex-wrap gap-1.5" dir="ltr">
+            {lesson.words.map((w, i) => {
+              const hit = said.includes(i);
+              return (
+                <motion.li
+                  key={w.es}
+                  animate={hit ? { scale: [1, 1.18, 1] } : {}}
+                  transition={{ duration: 0.35 }}
+                  title={w.he}
+                  className={`rounded-full px-3 py-1 text-sm font-bold ${
+                    hit ? "glow-green bg-neon-green text-bg" : "bg-surface-2 text-ink"
+                  }`}
+                >
+                  {hit ? "✓ " : ""}
+                  {w.es}
+                </motion.li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      {placement && (
+        <p className="rounded-2xl bg-surface p-3 text-center text-sm text-muted">
+          מבחן רמה: מדברים עם לוסיה כשתי דקות, והיא מתאימה את השאלות לתשובות. אין תשובות לא נכונות.
+        </p>
+      )}
+
       <section className="flex flex-col items-center gap-2 pt-2">
-        <Avatar persona={persona.id} state={mood} size={180} />
+        <Avatar persona={persona.id} state={mood} size={lesson || placement ? 140 : 180} />
         <h1 className="text-2xl font-bold">{persona.name}</h1>
         <p className="text-sm text-muted">
           {phase === "ready" && persona.taglineHe}
@@ -242,7 +295,13 @@ export function CallScreen({ persona }: { persona: Persona }) {
       <div className="mt-auto flex flex-col gap-3">
         {(phase === "ready" || phase === "error") && (
           <Button tone={persona.accent} onClick={start}>
-            {phase === "error" ? "לנסות שוב" : `להתחיל שיחה עם ${persona.name}`}
+            {phase === "error"
+              ? "לנסות שוב"
+              : lesson
+                ? "להתחיל את השיעור"
+                : placement
+                  ? "להתחיל את מבחן הרמה"
+                  : `להתחיל שיחה עם ${persona.name}`}
           </Button>
         )}
         {phase === "live" && (
@@ -255,9 +314,20 @@ export function CallScreen({ persona }: { persona: Persona }) {
                 {captions ? "להסתיר כתוביות" : "להציג כתוביות"}
               </button>
             </div>
-            <button onClick={() => void hangUp()} className="h-12 rounded-2xl bg-danger font-bold text-bg">
-              לסיים שיחה
-            </button>
+            {missionReady ? (
+              <motion.button
+                onClick={() => void hangUp()}
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                className="glow-green h-12 rounded-2xl bg-neon-green font-bold text-bg"
+              >
+                סיום שיעור ✓
+              </motion.button>
+            ) : (
+              <button onClick={() => void hangUp()} className="h-12 rounded-2xl bg-danger font-bold text-bg">
+                {lesson ? "לסיים עכשיו" : "לסיים שיחה"}
+              </button>
+            )}
           </>
         )}
         {phase === "ended" && (

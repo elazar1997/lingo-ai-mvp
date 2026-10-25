@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { findLesson } from "@/content/path-es";
+import { LEVELS } from "@/lib/levels";
 import type { StoredFeedback } from "@/lib/tutor";
 
 type Ready = { feedback: StoredFeedback; progress: { xp_total: number; streak_days: number } | null };
@@ -52,16 +54,49 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
   }
 
   const { feedback: f, progress } = result;
+  const lesson = f.lesson ? findLesson(f.lesson.id) : undefined;
   return (
     <div className="flex flex-1 flex-col gap-5">
       <header className="flex flex-col items-center gap-2 pt-2 text-center">
-        <p className="text-sm text-muted">סיכום שיחה · {f.minutes} דקות</p>
+        <p className="text-sm text-muted">
+          {lesson ? `שיעור: ${lesson.titleHe}` : f.placement ? "מבחן רמה" : "סיכום שיחה"} · {f.minutes} דקות
+        </p>
+        {lesson && f.lesson && <LessonResult stars={f.lesson.stars} />}
         <p className="text-4xl font-bold text-neon-green">+{f.xp.total} XP</p>
         <p className="text-xs text-muted">
           {f.xp.base} על הדקות + {f.xp.bonus} בונוס
+          {f.xp.lesson ? ` + ${f.xp.lesson} על כוכבים` : ""}
           {progress ? ` · סה"כ ${progress.xp_total} XP · 🔥 ${progress.streak_days}` : ""}
         </p>
       </header>
+
+      {f.placement && (
+        <Card title="הרמה שלך">
+          <p className="text-2xl font-extrabold text-neon-purple">
+            {LEVELS.find((l) => l.id === f.placement?.level)?.labelHe}
+          </p>
+          <p className="text-sm text-muted">עדכנו את הרמה בפרופיל. אפשר לשנות אותה בכל רגע בהגדרות.</p>
+        </Card>
+      )}
+
+      {lesson && f.lesson && (
+        <Card title={f.lesson.stars > 0 ? "המילים של השיעור" : `כמעט! צריך ${lesson.need} מילים והמשימה`}>
+          <ul className="flex flex-wrap gap-2" dir="ltr">
+            {lesson.words.map((w, i) => {
+              const hit = f.lesson!.said.includes(i);
+              return (
+                <li
+                  key={w.es}
+                  className={`rounded-full px-3 py-1 text-sm font-bold ${hit ? "bg-neon-green text-bg" : "bg-surface-2 text-muted line-through"}`}
+                >
+                  {w.es}
+                </li>
+              );
+            })}
+          </ul>
+          {!f.lesson.goal_met && <p className="text-sm text-muted">המשימה עוד לא הושלמה: {lesson.goalHe}</p>}
+        </Card>
+      )}
 
       <Card title="מה עשינו">
         <p>{f.summary_he}</p>
@@ -104,8 +139,16 @@ export function SummaryView({ sessionId }: { sessionId: string }) {
         <p>{f.tip_he}</p>
       </Card>
 
-      <div className="mt-auto">
-        <HomeLink />
+      <div className="mt-auto flex flex-col gap-3">
+        {lesson && f.lesson && f.lesson.stars === 0 && (
+          <Link
+            href={`/app/call?lesson=${lesson.id}`}
+            className="glow-green flex h-12 w-full items-center justify-center rounded-2xl bg-neon-green font-bold text-bg"
+          >
+            לנסות שוב
+          </Link>
+        )}
+        <HomeLink label={lesson || f.placement ? "המשך במסלול" : undefined} />
       </div>
     </div>
   );
@@ -120,10 +163,26 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function HomeLink() {
+function HomeLink({ label = "חזרה למסך הבית" }: { label?: string }) {
   return (
     <Link href="/app" className="flex h-12 w-full items-center justify-center rounded-2xl border border-line">
-      חזרה למסך הבית
+      {label}
     </Link>
+  );
+}
+
+// PR 3 replaces this with the full victory animation.
+function LessonResult({ stars }: { stars: number }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <p className="text-2xl font-extrabold">{stars > 0 ? "השיעור הושלם! 🎉" : "כמעט! 💪"}</p>
+      <p className="text-4xl tracking-widest" aria-label={`${stars} כוכבים`}>
+        {[1, 2, 3].map((i) => (
+          <span key={i} className={i <= stars ? "text-yellow-300" : "text-line"}>
+            ★
+          </span>
+        ))}
+      </p>
+    </div>
   );
 }

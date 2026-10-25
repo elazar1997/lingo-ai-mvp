@@ -1,4 +1,5 @@
 import "server-only";
+import type { Lesson } from "@/content/path-es";
 import type { PersonaId } from "@/lib/personas";
 
 // Persona prompts. Layer order: fixed system rules -> persona card -> learner context ->
@@ -70,7 +71,7 @@ function personaCard(id: PersonaId, level: string): string {
   return VALE_BASE + (isBeginner(level) ? VALE_SPEECH_BEGINNER : VALE_SPEECH);
 }
 
-function isBeginner(level: string): boolean {
+export function isBeginner(level: string): boolean {
   return !LEVEL_HINT[level] || level === "beginner" || level === "elementary";
 }
 
@@ -88,9 +89,11 @@ const BEGINNER = `
 - Live correction: before you move on, check what the learner said.
   - A word in another language (German "Danke", English "yes", Hebrew "תודה"): stop and give the Spanish word right away, then ask your question again. Example: "Danke" → "¡En español, gracias! ¿Café o té?"
   - A Spanish mistake: say the correct version once, briefly and kindly ("Se dice: yo tengo."), then continue.
-  - Gibberish, or you are not sure what they said: do not guess and do not move on. Say in Hebrew "לא הבנתי, אפשר שוב?" and repeat your question more slowly.
-- If the learner is stuck, says "no entiendo", answers in Hebrew, or is silent: help right away. Say the key word in Hebrew ("'cansado' זה עייף"), or give a very short explanation in Hebrew (one sentence), then repeat your question in simpler Spanish. A short Hebrew sentence is welcome at this level.
+  - Gibberish, or you are not sure what they said: do not guess and do not move on. Say in Hebrew "לא הבנתי, אפשר שוב?" and repeat your question more slowly. "No sé", "eh", silence or Hebrew are not gibberish: help as described next.
+  - Names of people and places are never mistakes: do not correct them.
+- If the learner is stuck, says "no sé" or "no entiendo", answers in Hebrew, or is silent: help right away, never answer it with "לא הבנתי". Say the key word in Hebrew ("'cansado' זה עייף"), or give a very short explanation in Hebrew (one sentence), then repeat your question in simpler Spanish. A short Hebrew sentence is welcome at this level.
 - When the learner asks what a word means, give its meaning in Hebrew, never in English.
+- Your Hebrew must fit a man or a woman: use impersonal forms like "אפשר לענות רק sí או no" or "אומרים me llamo", never gendered commands like "תגיד", "תבחר", "תנסה" or "תגידי".
 - Praise every attempt, even a single word.
 `.trim();
 
@@ -123,20 +126,83 @@ export function personaVoice(id: PersonaId): string {
   return PERSONA_VOICES[id];
 }
 
+// What each learning goal means for topics and words in free conversation.
+const GOAL_TOPICS: Record<string, string> = {
+  travel: "travel: airports, hotels, asking for directions, ordering food, sightseeing",
+  business: "work and business: introducing oneself at work, meetings, schedules, polite phrases",
+  studies: "studies: classes, subjects, campus life, exams",
+  relocation: "moving to a Spanish-speaking country: renting a flat, banks, shops, neighbours, paperwork",
+  hobby: "fun: light everyday chat about whatever they enjoy",
+};
+
+const INTEREST_EN: Record<string, string> = {
+  food: "food", music: "music", sport: "sport", movies: "films and series", tech: "technology",
+  nature: "nature", art: "art and design", family: "family and friends", travel: "travel", fashion: "fashion",
+};
+
+function learnerContext(goal: string | null | undefined, interests: string[] | null | undefined, inLesson: boolean) {
+  const lines: string[] = [];
+  if (goal && GOAL_TOPICS[goal]) lines.push(`- They are learning Spanish for ${GOAL_TOPICS[goal]}. When you pick topics or a new word, prefer ones that fit this.`);
+  const likes = (interests ?? []).map((i) => INTEREST_EN[i]).filter(Boolean);
+  if (likes.length) lines.push(`- Their interests: ${likes.join(", ")}. Bring them up naturally now and then.`);
+  if (!lines.length) return "";
+  if (inLesson) lines.push("- In this lesson the scene and mission come first; use the above only for small talk.");
+  return `# About the learner\n${lines.join("\n")}`;
+}
+
+function missionBlock(lesson: Lesson): string {
+  return `
+# Today's lesson: a role-play (it sets the scene; the rules and the learner level above still apply)
+- Scene: ${lesson.roleplay}
+- The learner's mission: ${lesson.mission}
+- Target words the learner should say themselves: ${lesson.words.map((w) => `"${w.es}"`).join(", ")}.
+- Steer the scene so the learner needs each target word: ask questions whose natural answer uses it. Do not say a target word before the learner does, unless they are stuck: then give it as a hint with its meaning in Hebrew and ask them to say it ("Repite: mucho gusto").
+- Keep track of which target words the learner has already said, and steer toward the ones still missing (for example, serve the order so they can say "gracias").
+- Stay in the scene. If the learner drifts off, answer briefly and bring them back to it.
+- When the learner has done the mission, celebrate briefly in Spanish, then say in Hebrew "אפשר ללחוץ על סיום שיעור, או להמשיך לדבר".`.trim();
+}
+
+const PLACEMENT = `
+# This call: a short placement chat of about two minutes (this replaces any level section)
+The learner's level is unknown. Your job is to find it gently, not to teach.
+- Start very easy: greet, ask their name and how they are, in short, clear sentences.
+- Each time they answer well, go one step harder: where they live and what they do; what they did yesterday (past tense); plans for next week (future); then one opinion question.
+- When they struggle, stay at that step: ask an easy either/or question and do not go higher. Never make it feel like a test; praise every answer.
+- Speak Spanish. If they answer in Hebrew or say they do not understand, say one short encouraging line in Hebrew and ask an easier question in Spanish.
+- No corrections and no explanations in this call.
+- When told time is almost up, thank them warmly and say in Hebrew "תודה! עכשיו נתאים לך את הרמה".`.trim();
+
+export type CallMode = { kind: "free" } | { kind: "lesson"; lesson: Lesson } | { kind: "placement" };
+
 export function buildInstructions(
   id: PersonaId,
-  learner: { level: string; displayName?: string | null },
+  learner: {
+    level: string;
+    displayName?: string | null;
+    goal?: string | null;
+    interests?: string[] | null;
+  },
+  mode: CallMode = { kind: "free" },
 ): string {
   // The display name is user input, so it is reduced to letters and spaces before use.
   const name = (learner.displayName ?? "").replace(/[^\p{L} ]/gu, "").slice(0, 30).trim();
+  const hello = `"¡Hola${name ? `, ${name}` : ""}!"`;
+  const beginner = isBeginner(learner.level);
+
+  let goal: string;
+  if (mode.kind === "lesson") goal = `Session goal: play the scene. ${mode.lesson.opening}`;
+  else if (mode.kind === "placement") goal = `Session goal: the placement chat. Start with ${hello} and ask their name.`;
+  else if (beginner) goal = `Session goal: a friendly everyday conversation. Start with ${hello} and one very easy yes/no or either/or question.`;
+  else goal = "Session goal: a friendly everyday conversation. Start by greeting the learner in character in one or two short sentences and ask one easy question.";
+
   return [
     SYSTEM_RULES,
-    personaCard(id, learner.level),
-    LEVEL_HINT[learner.level] ?? LEVEL_HINT.beginner,
+    personaCard(id, mode.kind === "placement" ? "beginner" : learner.level),
+    mode.kind === "placement" ? PLACEMENT : (LEVEL_HINT[learner.level] ?? LEVEL_HINT.beginner),
     name ? `The learner's first name is ${name}.` : "",
-    isBeginner(learner.level)
-      ? `Session goal: a friendly everyday conversation. Start with "¡Hola${name ? `, ${name}` : ""}!" and one very easy yes/no or either/or question.`
-      : "Session goal: a friendly everyday conversation. Start by greeting the learner in character in one or two short sentences and ask one easy question.",
+    mode.kind === "placement" ? "" : learnerContext(learner.goal, learner.interests, mode.kind === "lesson"),
+    mode.kind === "lesson" ? missionBlock(mode.lesson) : "",
+    goal,
   ]
     .filter(Boolean)
     .join("\n\n");
