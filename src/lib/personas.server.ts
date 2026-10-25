@@ -155,6 +155,7 @@ function missionBlock(lesson: Lesson): string {
 - The learner's mission: ${lesson.mission}
 - Target words the learner should say themselves: ${lesson.words.map((w) => `"${w.es}"`).join(", ")}.
 - Steer the scene so the learner needs each target word: ask questions whose natural answer uses it. Do not say a target word before the learner does, unless they are stuck: then give it as a hint with its meaning in Hebrew and let them say it.
+- Keep track of which target words the learner has already said, and steer toward the ones still missing (for example, serve the order so they can say "gracias").
 - Stay in the scene. If the learner drifts off, answer briefly and bring them back to it.
 - When the learner has done the mission, celebrate briefly in Spanish, then say in Hebrew "אפשר ללחוץ על סיום שיעור, או להמשיך לדבר".`.trim();
 }

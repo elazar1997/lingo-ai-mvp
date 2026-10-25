@@ -97,7 +97,7 @@ function missionNote(mission: string): string {
   return `
 
 This call was a lesson role-play. The learner's mission was: ${mission}
-Also return goal_met: true if the learner did the mission in Spanish, even with mistakes or hints from the partner; false if they did not get there.`;
+Also return goal_met: true if the learner achieved the main point of the mission in Spanish, even with mistakes, hints from the partner, or a small part left out (the app checks the target words separately); false only if they did not get there.`;
 }
 
 const PLACEMENT_NOTE = `
