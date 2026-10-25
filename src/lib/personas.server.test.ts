@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-const { buildInstructions, personaVoice } = await import("./personas.server");
+const { buildInstructions, levelSpeed, personaVoice } = await import("./personas.server");
 
 describe("buildInstructions", () => {
   it("puts the fixed rules before the persona and learner context", () => {
@@ -30,6 +30,21 @@ describe("buildInstructions", () => {
 
   it("falls back to the beginner hint for an unknown level", () => {
     expect(buildInstructions("lucia", { level: "expert" })).toContain("Learner level: beginner");
+  });
+
+  it("gives beginners slow speech and Hebrew help, after the persona card", () => {
+    const text = buildInstructions("vale", { level: "beginner" });
+    expect(text).toContain("noticeably slower");
+    expect(text).toContain("in Hebrew");
+    expect(text.indexOf("Character: Vale")).toBeLessThan(text.indexOf("Learner level: beginner"));
+    expect(buildInstructions("vale", { level: "advanced" })).not.toContain("noticeably slower");
+  });
+
+  it("slows the voice for beginners only", () => {
+    expect(levelSpeed("beginner")).toBeLessThan(1);
+    expect(levelSpeed("elementary")).toBeLessThan(1);
+    expect(levelSpeed("intermediate")).toBe(1);
+    expect(levelSpeed("advanced")).toBe(1);
   });
 });
 
