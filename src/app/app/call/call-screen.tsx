@@ -5,14 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Avatar } from "@/components/avatar";
 import { Button, ButtonLink } from "@/components/ui";
+import { WordChip } from "@/components/word-chip";
 import type { Lesson } from "@/content/path-es";
 import { errorHe } from "@/lib/messages";
 import { wordsSaid } from "@/lib/mission";
 import type { Persona } from "@/lib/personas";
 import { avatarMood, initialCallState, reduceEvent } from "@/lib/realtime-events";
 import { vibrate } from "@/lib/sfx";
+import { VoiceStage } from "./voice-stage";
 
 type Phase = "ready" | "connecting" | "live" | "ending" | "ended" | "error";
 
@@ -32,6 +33,11 @@ export function CallScreen({
   const [error, setError] = useState<string | null>(null);
   const [state, dispatch] = useReducer(reduceEvent, initialCallState);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  // Audio for the live rings: created on the start tap (browsers need a gesture).
+  const [audioCtx, setAudioCtx] = useState<AudioContext | null>(null);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [muted, setMuted] = useState(false);
   const [captions, setCaptions] = useState(true);
   const router = useRouter();
@@ -40,6 +46,7 @@ export function CallScreen({
   const dc = useRef<RTCDataChannel | null>(null);
   const mic = useRef<MediaStream | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const session = useRef<{ id: string; startedAt: number } | null>(null);
   const stateRef = useRef(state);
   const wrapUpSent = useRef(false);
@@ -70,6 +77,11 @@ export function CallScreen({
     pc.current?.getSenders().forEach((s) => s.track?.stop());
     pc.current?.close();
     mic.current?.getTracks().forEach((t) => t.stop());
+    audioCtxRef.current?.close().catch(() => undefined);
+    audioCtxRef.current = null;
+    setAudioCtx(null);
+    setMicStream(null);
+    setRemoteStream(null);
     pc.current = null;
     dc.current = null;
     mic.current = null;
@@ -136,10 +148,17 @@ export function CallScreen({
     setError(null);
     wrapUpSent.current = false;
     try {
+      audioCtxRef.current = new AudioContext();
+      setAudioCtx(audioCtxRef.current);
+    } catch {
+      // No Web Audio: the call works, just without live rings.
+    }
+    try {
       // Ask for the microphone first so a refusal doesn't open a billed session.
       mic.current = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
+      setMicStream(mic.current);
     } catch {
       setError("צריך לאשר גישה למיקרופון כדי לדבר. אפשר לשנות את זה בהגדרות הדפדפן.");
       setPhase("error");
@@ -151,6 +170,7 @@ export function CallScreen({
       pc.current = peer;
       peer.ontrack = (e) => {
         if (audio.current) audio.current.srcObject = e.streams[0];
+        setRemoteStream(e.streams[0]);
       };
       mic.current.getTracks().forEach((t) => peer.addTrack(t, mic.current!));
 
@@ -191,6 +211,7 @@ export function CallScreen({
       }
       session.current = { id: data.sessionId, startedAt: Date.now() };
       setSecondsLeft(data.allowedSeconds);
+      setTotalSeconds(data.allowedSeconds);
       await peer.setRemoteDescription({ type: "answer", sdp: data.sdp });
       setPhase("live");
     } catch {
@@ -221,6 +242,7 @@ export function CallScreen({
   }, [said.length, missionReady]);
 
   const mood = phase === "connecting" ? "thinking" : avatarMood(state);
+  const inCall = phase === "connecting" || phase === "live" || phase === "ending";
   const mm = String(Math.floor(secondsLeft / 60));
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
@@ -231,11 +253,7 @@ export function CallScreen({
           <ChevronRight className="size-4" />
           חזרה
         </Link>
-        {phase === "live" && (
-          <span className="glass rounded-full px-3 py-1 font-display font-semibold tabular-nums" dir="ltr">
-            {mm}:{ss}
-          </span>
-        )}
+        {phase === "live" && <TimerRing seconds={secondsLeft} total={totalSeconds} label={`${mm}:${ss}`} />}
       </header>
 
       {lesson && (
@@ -247,24 +265,12 @@ export function CallScreen({
             </span>
           </div>
           <p className="text-small text-muted">{lesson.goalHe}</p>
+          {!inCall && phase !== "ended" && <p className="text-small text-neon-green">לחיצה על מילה משמיעה את ההגייה שלה</p>}
           <ul className="flex flex-wrap gap-1.5" dir="ltr">
-            {lesson.words.map((w, i) => {
-              const hit = said.includes(i);
-              return (
-                <motion.li
-                  key={w.es}
-                  animate={hit ? { scale: [1, 1.18, 1] } : {}}
-                  transition={{ duration: 0.35 }}
-                  title={w.he}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1 font-display font-semibold ${
-                    hit ? "glow-green bg-neon-green text-bg" : "bg-white/8 text-ink"
-                  }`}
-                >
-                  {hit && <Check className="size-3.5" strokeWidth={3.5} />}
-                  {w.es}
-                </motion.li>
-              );
-            })}
+            {lesson.words.map((w, i) => (
+              // Pronunciation only before the call: during it the sound would reach the mic.
+              <WordChip key={w.es} word={w} hit={said.includes(i)} speakable={!inCall} showHe={!inCall} />
+            ))}
           </ul>
         </section>
       )}
@@ -275,7 +281,15 @@ export function CallScreen({
       )}
 
       <section className="flex flex-col items-center gap-2 pt-2">
-        <Avatar persona={persona.id} state={mood} size={lesson || placement ? 140 : 180} />
+        <VoiceStage
+          persona={persona.id}
+          mood={mood}
+          size={lesson || placement ? 120 : 160}
+          audioCtx={audioCtx}
+          mic={micStream}
+          remote={remoteStream}
+          live={phase === "live"}
+        />
         <h1 className="text-title font-bold">{persona.name}</h1>
         <p className="text-small text-muted">
           {phase === "ready" && persona.taglineHe}
@@ -354,5 +368,33 @@ export function CallScreen({
         )}
       </div>
     </div>
+  );
+}
+
+// Time left as a ring that empties, with the clock inside.
+function TimerRing({ seconds, total, label }: { seconds: number; total: number; label: string }) {
+  const r = 20;
+  const c = 2 * Math.PI * r;
+  const share = total > 0 ? seconds / total : 0;
+  const low = seconds <= WRAP_UP_AT;
+  return (
+    <span className="relative flex size-12 items-center justify-center" dir="ltr" aria-label={`נשארו ${label}`}>
+      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 48 48" aria-hidden>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="rgb(255 255 255 / 0.1)" strokeWidth="4" />
+        <circle
+          cx="24"
+          cy="24"
+          r={r}
+          fill="none"
+          stroke={low ? "var(--color-gold)" : "var(--color-neon-green)"}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - share)}
+          style={{ transition: "stroke-dashoffset 1s linear" }}
+        />
+      </svg>
+      <span className="font-display text-[11px] font-semibold tabular-nums">{label}</span>
+    </span>
   );
 }

@@ -76,25 +76,39 @@ h3 {
 }
 
 @utility glow-purple {
-  box-shadow: 0 0 0 1px var(--color-neon-purple), 0 0 24px -4px var(--color-neon-purple);
+  --glow-shadow: 0 0 0 1px var(--color-neon-purple), 0 0 24px -4px var(--color-neon-purple);
+  box-shadow: var(--glow-shadow);
 }
 
 @utility glow-green {
-  box-shadow: 0 0 0 1px var(--color-neon-green), 0 0 24px -4px var(--color-neon-green);
+  --glow-shadow: 0 0 0 1px var(--color-neon-green), 0 0 24px -4px var(--color-neon-green);
+  box-shadow: var(--glow-shadow);
 }
 
 @utility glow-gold {
-  box-shadow: 0 0 20px -4px var(--color-gold);
+  --glow-shadow: 0 0 20px -4px var(--color-gold);
+  box-shadow: var(--glow-shadow);
 }
 
-/* 3D button: a darker bottom edge that the button presses into. */
+/* 3D button: a darker bottom edge that the button presses into. Keeps a glow utility's
+   shadow (--glow-shadow) alongside the edge, so the two never override each other. */
 @utility btn-3d {
-  box-shadow: 0 4px 0 var(--edge, rgb(0 0 0 / 0.4));
+  box-shadow: 0 4px 0 var(--edge, rgb(0 0 0 / 0.4)), var(--glow-shadow, 0 0 #0000) !important;
   transform: translateY(0);
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
   &:active:not(:disabled) {
-    box-shadow: 0 0 0 var(--edge, rgb(0 0 0 / 0.4));
+    box-shadow: 0 0 0 var(--edge, rgb(0 0 0 / 0.4)), var(--glow-shadow, 0 0 #0000) !important;
     transform: translateY(4px);
+  }
+}
+
+/* A lesson coin on the path: same idea with a deeper edge. */
+@utility coin-3d {
+  box-shadow: 0 7px 0 var(--edge), var(--glow-shadow, 0 0 #0000);
+  transition: transform 100ms ease, box-shadow 100ms ease;
+  &:active {
+    box-shadow: 0 1px 0 var(--edge), var(--glow-shadow, 0 0 #0000);
+    transform: translateY(6px);
   }
 }
 
