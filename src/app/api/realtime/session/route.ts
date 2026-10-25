@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { apiError, apiOk, dbErrorCode } from "@/lib/api";
 import { sha256Hex } from "@/lib/crypto";
-import { env } from "@/lib/env";
+import { env, isAdmin } from "@/lib/env";
 import { isPersonaId } from "@/lib/personas";
-import { buildInstructions, levelSpeed, personaVoice } from "@/lib/personas.server";
+import { buildInstructions, personaVoice } from "@/lib/personas.server";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 
 const Body = z.object({ personaId: z.string().refine(isPersonaId), sdp: z.string().min(1).max(20_000) });
@@ -34,7 +34,9 @@ export async function POST(request: Request) {
     .rpc("start_session", {
       p_user: user.id,
       p_persona: personaId,
-      p_daily_seconds: e.DAILY_LIMIT_MINUTES * 60,
+      // Admins (ADMIN_EMAILS) skip the daily quota so they can test; the per-call cap and
+      // the monthly budget still apply to them.
+      p_daily_seconds: isAdmin(user.email) ? 24 * 3600 : e.DAILY_LIMIT_MINUTES * 60,
       p_max_session_seconds: e.MAX_SESSION_MINUTES * 60,
       p_budget_block_usd: e.MONTHLY_BUDGET_USD * e.BUDGET_BLOCK_RATIO,
       p_reserve_usd_per_minute: e.RESERVE_USD_PER_MINUTE,
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
           // eagerness gives learners time to search for words before the persona replies.
           turn_detection: { type: "semantic_vad", eagerness: "low" },
         },
-        output: { voice: personaVoice(personaId), speed: levelSpeed(profile.spanish_level) },
+        output: { voice: personaVoice(personaId) },
       },
     }),
   );

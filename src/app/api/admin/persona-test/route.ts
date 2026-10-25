@@ -2,8 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import { apiError, apiOk } from "@/lib/api";
 import { env } from "@/lib/env";
 import { isPersonaId, type PersonaId } from "@/lib/personas";
-import { buildInstructions } from "@/lib/personas.server";
-import { runScenario, SCENARIOS, type Complete } from "@/lib/persona-test";
+import { buildInstructions, VALE_SLANG } from "@/lib/personas.server";
+import { runScenario, SCENARIOS, slangHits, type Complete } from "@/lib/persona-test";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { toStored } from "@/lib/tutor";
 import { analyze } from "@/lib/tutor.server";
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
               300,
             )
           : undefined;
-        return { persona, scenario: scenario.id, turns, usage, feedback };
+        return { persona, scenario: scenario.id, slang: slangHits(turns, VALE_SLANG), turns, usage, feedback };
       } catch (err) {
         return { persona, scenario: scenario.id, error: String(err) };
       }
