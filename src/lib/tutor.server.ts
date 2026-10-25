@@ -14,9 +14,9 @@ import {
   type TranscriptTurn,
 } from "@/lib/tutor";
 
-// Rough price of the tutor model per 1M tokens, for the spend ledger.
-const USD_PER_M_IN = 0.25;
-const USD_PER_M_OUT = 2;
+// Price of the tutor model per 1M tokens (input, output), for the spend ledger.
+// Unknown models are booked at the gpt-5 price so the budget errs on the safe side.
+const PRICES: Record<string, [number, number]> = { "gpt-5": [1.25, 10], "gpt-5-mini": [0.25, 2] };
 
 // Analyzes a finished call and records its feedback, XP and streak day. Safe to call
 // twice: record_feedback ignores a second write for the same session.
@@ -80,7 +80,8 @@ export async function analyze(
   const data = await res.json();
 
   const usage = data.usage ?? { prompt_tokens: 0, completion_tokens: 0 };
-  const usd = (usage.prompt_tokens * USD_PER_M_IN + usage.completion_tokens * USD_PER_M_OUT) / 1e6;
+  const [inPrice, outPrice] = PRICES[e.TUTOR_MODEL] ?? PRICES["gpt-5"];
+  const usd = (usage.prompt_tokens * inPrice + usage.completion_tokens * outPrice) / 1e6;
   await supabaseAdmin()
     .from("spend_ledger")
     .insert({ kind: "text", user_id: userId, usd: Math.max(0.0001, Number(usd.toFixed(4))) });
