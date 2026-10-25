@@ -5,6 +5,8 @@ import { isPersonaId, type PersonaId } from "@/lib/personas";
 import { buildInstructions } from "@/lib/personas.server";
 import { runScenario, SCENARIOS, type Complete } from "@/lib/persona-test";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { toStored } from "@/lib/tutor";
+import { analyze } from "@/lib/tutor.server";
 
 export const maxDuration = 120;
 
@@ -26,6 +28,7 @@ export async function GET(request: Request) {
   const scenarioParam = url.searchParams.get("scenario");
   const scenarios = scenarioParam ? SCENARIOS.filter((s) => s.id === scenarioParam) : SCENARIOS;
   if (scenarios.length === 0) return apiError("BAD_REQUEST");
+  const withTutor = url.searchParams.get("tutor") === "1";
 
   const complete: Complete = async (messages) => {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -43,7 +46,19 @@ export async function GET(request: Request) {
       const instructions = buildInstructions(persona, { level: "beginner", displayName: "Dana" });
       try {
         const { turns, usage } = await runScenario(instructions, scenario, complete);
-        return { persona, scenario: scenario.id, turns, usage };
+        // &tutor=1 also runs the tutor on the transcript, as if it were a 5-minute call.
+        const feedback = withTutor
+          ? toStored(
+              await analyze(
+                turns.map((t) => ({ role: t.role === "learner" ? "user" : "assistant", text: t.text })),
+                "beginner",
+                persona === "vale" ? "Vale" : "Lucía",
+                null,
+              ),
+              300,
+            )
+          : undefined;
+        return { persona, scenario: scenario.id, turns, usage, feedback };
       } catch (err) {
         return { persona, scenario: scenario.id, error: String(err) };
       }
