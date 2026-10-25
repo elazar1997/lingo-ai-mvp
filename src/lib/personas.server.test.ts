@@ -35,8 +35,8 @@ describe("buildInstructions", () => {
   it("gives beginners slow speech and Hebrew help, after the persona card", () => {
     const text = buildInstructions("vale", { level: "beginner" });
     expect(text).toContain("noticeably slower");
-    expect(text).toContain("Five words per sentence at most");
-    expect(text).toContain("yes/no");
+    expect(text).toContain("three to five words");
+    expect(text).toContain("End every turn with one closed question");
     expect(text).toContain("in Hebrew");
     expect(text.indexOf("Character: Vale")).toBeLessThan(text.indexOf("Learner level: beginner"));
     expect(buildInstructions("vale", { level: "advanced" })).not.toContain("noticeably slower");
@@ -73,9 +73,26 @@ describe("prompt content", () => {
     expect(buildInstructions("vale", { level: "beginner" })).toContain("is yours, not the learner's");
   });
 
-  it("gives Vale Mexican slang and Lucía none", () => {
-    expect(buildInstructions("vale", { level: "beginner" })).toContain("¡no manches!");
-    expect(buildInstructions("lucia", { level: "beginner" })).not.toContain("güey");
+  it("gives Vale Mexican slang above beginner level, and Lucía none", () => {
+    expect(buildInstructions("vale", { level: "intermediate" })).toContain("Slang she uses naturally");
+    expect(buildInstructions("vale", { level: "advanced" })).toContain("¡no manches!");
+    expect(buildInstructions("lucia", { level: "advanced" })).not.toContain("güey");
+  });
+
+  it("leaves Vale's slang list out for beginners, and bans slang", () => {
+    for (const level of ["beginner", "elementary", "unknown"]) {
+      const text = buildInstructions("vale", { level });
+      expect(text).not.toContain("Slang she uses naturally");
+      expect(text).toContain("No slang, no Mexican expressions");
+    }
+  });
+
+  it("asks beginners for live correction of foreign words and gibberish", () => {
+    const text = buildInstructions("vale", { level: "beginner", displayName: "Dana" });
+    expect(text).toContain("Live correction");
+    expect(text).toContain("Danke");
+    expect(text).toContain("לא הבנתי");
+    expect(text).toContain('"¡Hola, Dana!"');
   });
 });
 

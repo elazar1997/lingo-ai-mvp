@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runScenario, SCENARIOS, TURNS, type Complete } from "./persona-test";
+import { runScenario, SCENARIOS, slangHits, TURNS, type Complete } from "./persona-test";
 
 describe("runScenario", () => {
   it("alternates persona and learner, starting and ending with the persona", async () => {
@@ -26,5 +26,16 @@ describe("runScenario", () => {
     expect(calls[1][1].role).toBe("user");
     // Third call is the persona again: the learner's line arrives as "user".
     expect(calls[2].slice(1).map((m) => m.role)).toEqual(["assistant", "user"]);
+  });
+});
+
+describe("slangHits", () => {
+  it("finds whole slang words in persona turns only, ignoring accents and case", () => {
+    const turns = [
+      { role: "persona" as const, text: "¡Qué CHIDO! Me late." },
+      { role: "learner" as const, text: "neta" },
+      { role: "persona" as const, text: "Padres y madres. ¡Qué onda!" },
+    ];
+    expect(slangHits(turns, ["chido", "me late", "neta", "padre", "que onda"])).toEqual(["chido", "me late", "que onda"]);
   });
 });
