@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 // Error codes the client maps to Hebrew messages. Never echo internal errors.
 export type ApiErrorCode =
   | "UNAUTHENTICATED"
+  | "FORBIDDEN"
   | "BAD_REQUEST"
   | "INVALID_INVITE"
   | "SESSION_ACTIVE"
@@ -15,6 +16,7 @@ export type ApiErrorCode =
 
 const STATUS: Record<ApiErrorCode, number> = {
   UNAUTHENTICATED: 401,
+  FORBIDDEN: 403,
   BAD_REQUEST: 400,
   INVALID_INVITE: 400,
   SESSION_ACTIVE: 409,

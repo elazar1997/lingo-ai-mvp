@@ -1,6 +1,7 @@
 // Hebrew text for API error codes shown to the user.
 export const ERROR_HE: Record<string, string> = {
   UNAUTHENTICATED: "צריך להתחבר מחדש.",
+  FORBIDDEN: "אין לך גישה לזה.",
   BAD_REQUEST: "משהו בפרטים לא תקין. כדאי לבדוק ולנסות שוב.",
   INVALID_INVITE: "קוד ההזמנה לא תקף, כבר נוצל, או שייך לאימייל אחר.",
   SESSION_ACTIVE: "כבר יש לך שיחה פתוחה. סיים אותה קודם.",

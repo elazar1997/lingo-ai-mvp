@@ -43,6 +43,22 @@ const LEVEL_HINT: Record<string, string> = {
   advanced: "Learner level: advanced. Fully natural speech, idioms, fast pace.",
 };
 
+// A short line in each persona's voice, for comparing voices before choosing one.
+const SAMPLES: Record<PersonaId, { text: string; style: string }> = {
+  lucia: {
+    text: "¡Hola! Soy Lucía. Qué gusto conocerte. Vamos a hablar un poquito en español, despacio y con calma. ¿Cómo te llamas?",
+    style: "Warm, patient Latin American Spanish teacher. Clear, unhurried, friendly and encouraging.",
+  },
+  vale: {
+    text: "¡Qué onda! Soy Vale, de la Ciudad de México. Neta, me da mucho gusto platicar contigo. ¿Qué hiciste hoy? ¡Cuéntame todo, güey!",
+    style: "Young woman from Mexico City, upbeat, playful and casual, laughing easily. Natural Mexican accent.",
+  },
+};
+
+export function voiceSample(id: PersonaId) {
+  return SAMPLES[id];
+}
+
 export function personaVoice(id: PersonaId): string {
   return PERSONA_CARDS[id].voice;
 }
