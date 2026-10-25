@@ -1,8 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { apiError, apiOk } from "@/lib/api";
 import { env } from "@/lib/env";
+import { findLesson } from "@/content/path-es";
+import { wordsSaid } from "@/lib/mission";
 import { isPersonaId, type PersonaId } from "@/lib/personas";
-import { buildInstructions, VALE_SLANG } from "@/lib/personas.server";
+import { buildInstructions, VALE_SLANG, type CallMode } from "@/lib/personas.server";
 import { runScenario, SCENARIOS, slangHits, type Complete } from "@/lib/persona-test";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { toStored } from "@/lib/tutor";
@@ -23,8 +25,19 @@ export async function GET(request: Request) {
   const key = url.searchParams.get("key") ?? "";
   if (!e.PERSONA_TEST_KEY || !safeEqual(key, e.PERSONA_TEST_KEY)) return apiError("FORBIDDEN");
 
+  // &lesson=<id> plays that lesson (its persona), &placement=1 the level test (Lucía).
+  const lesson = findLesson(url.searchParams.get("lesson"));
+  const placement = url.searchParams.get("placement") === "1";
+  const mode: CallMode = lesson ? { kind: "lesson", lesson } : placement ? { kind: "placement" } : { kind: "free" };
   const personaParam = url.searchParams.get("persona");
-  const personas: PersonaId[] = isPersonaId(personaParam) ? [personaParam] : ["lucia", "vale"];
+  const personas: PersonaId[] = lesson
+    ? [lesson.persona]
+    : placement
+      ? ["lucia"]
+      : isPersonaId(personaParam)
+        ? [personaParam]
+        : ["lucia", "vale"];
+  const level = url.searchParams.get("level") ?? "beginner";
   const scenarioParam = url.searchParams.get("scenario");
   const scenarios = scenarioParam ? SCENARIOS.filter((s) => s.id === scenarioParam) : SCENARIOS;
   if (scenarios.length === 0) return apiError("BAD_REQUEST");
@@ -43,22 +56,30 @@ export async function GET(request: Request) {
 
   const jobs = personas.flatMap((persona) =>
     scenarios.map(async (scenario) => {
-      const instructions = buildInstructions(persona, { level: "beginner", displayName: "Dana" });
+      const instructions = buildInstructions(
+        persona,
+        { level, displayName: "Dana", goal: url.searchParams.get("goal"), interests: url.searchParams.getAll("interest") },
+        mode,
+      );
       try {
         const { turns, usage } = await runScenario(instructions, scenario, complete);
         // &tutor=1 also runs the tutor on the transcript, as if it were a 5-minute call.
-        const feedback = withTutor
-          ? toStored(
-              await analyze(
-                turns.map((t) => ({ role: t.role === "learner" ? "user" : "assistant", text: t.text })),
-                "beginner",
-                persona === "vale" ? "Vale" : "Lucía",
-                null,
-              ),
-              300,
+        const raw = withTutor
+          ? await analyze(
+              turns.map((t) => ({ role: t.role === "learner" ? "user" : "assistant", text: t.text })),
+              level,
+              persona === "vale" ? "Vale" : "Lucía",
+              null,
+              { lesson, placement },
             )
           : undefined;
-        return { persona, scenario: scenario.id, slang: slangHits(turns, VALE_SLANG), turns, usage, feedback };
+        const feedback = raw
+          ? { ...toStored(raw, 300), goal_met: raw.goal_met, placement_level: raw.placement_level }
+          : undefined;
+        const said = lesson
+          ? wordsSaid(lesson, turns.filter((t) => t.role === "learner").map((t) => t.text)).map((i) => lesson.words[i].es)
+          : undefined;
+        return { persona, scenario: scenario.id, slang: slangHits(turns, VALE_SLANG), said, turns, usage, feedback };
       } catch (err) {
         return { persona, scenario: scenario.id, error: String(err) };
       }

@@ -13,17 +13,25 @@ export const Feedback = z.object({
   praise_he: z.string(),
   tip_he: z.string(),
   performance: z.number().int().min(0).max(5),
+  // Only asked for in a lesson: whether the learner did the mission.
+  goal_met: z.boolean().optional(),
+  // Only asked for in a placement chat.
+  placement_level: z.enum(["beginner", "intermediate", "advanced"]).optional(),
 });
 export type Feedback = z.infer<typeof Feedback>;
 
 // Stored in feedback.data and shown on the summary screen.
-export type StoredFeedback = Omit<Feedback, "performance"> & {
+export type StoredFeedback = Omit<Feedback, "performance" | "goal_met" | "placement_level"> & {
   minutes: number;
-  xp: { base: number; bonus: number; total: number };
+  // lesson = bonus for new stars in a lesson, included in total.
+  xp: { base: number; bonus: number; total: number; lesson?: number };
+  // Lesson result: indexes of the target words said, the mission check and the stars.
+  lesson?: { id: string; said: number[]; goal_met: boolean; stars: number };
+  placement?: { level: "beginner" | "intermediate" | "advanced" };
 };
 
 // JSON schema for OpenAI structured outputs (strict mode needs every field required).
-export const FEEDBACK_JSON_SCHEMA = {
+const BASE_SCHEMA = {
   name: "lingo_feedback",
   strict: true,
   schema: {
@@ -57,12 +65,50 @@ export const FEEDBACK_JSON_SCHEMA = {
   },
 } as const;
 
+// The base schema plus goal_met for a lesson or placement_level for a placement chat.
+export function feedbackJsonSchema(extra: { mission?: boolean; placement?: boolean } = {}) {
+  const required: string[] = [...BASE_SCHEMA.schema.required];
+  const properties: Record<string, unknown> = { ...BASE_SCHEMA.schema.properties };
+  if (extra.mission) {
+    required.push("goal_met");
+    properties.goal_met = { type: "boolean" };
+  }
+  if (extra.placement) {
+    required.push("placement_level");
+    properties.placement_level = { type: "string", enum: ["beginner", "intermediate", "advanced"] };
+  }
+  return { ...BASE_SCHEMA, schema: { ...BASE_SCHEMA.schema, required, properties } };
+}
+
 export const MAX_MISTAKES = 3;
 export const MAX_WORDS = 6;
 const XP_PER_MINUTE = 10;
 const BONUS_PER_POINT = 10; // performance 0-5, so up to 50 bonus XP
 
-export function tutorSystemPrompt(level: string, personaName: string): string {
+export function tutorSystemPrompt(
+  level: string,
+  personaName: string,
+  extra: { mission?: string; placement?: boolean } = {},
+): string {
+  return baseTutorPrompt(level, personaName) + (extra.mission ? missionNote(extra.mission) : "") + (extra.placement ? PLACEMENT_NOTE : "");
+}
+
+function missionNote(mission: string): string {
+  return `
+
+This call was a lesson role-play. The learner's mission was: ${mission}
+Also return goal_met: true if the learner did the mission in Spanish, even with mistakes or hints from the partner; false if they did not get there.`;
+}
+
+const PLACEMENT_NOTE = `
+
+This call was a short placement chat to find the learner's level, so ignore the level stated above and do not grade for it. Also return placement_level:
+- "beginner": single words or memorized phrases, present tense only, often stuck or answering in Hebrew.
+- "intermediate": simple full sentences, some past or future, can keep a short conversation going.
+- "advanced": fluent, varied tenses, gives opinions and reasons.
+When unsure between two levels, pick the lower one.`;
+
+function baseTutorPrompt(level: string, personaName: string): string {
   return `You are the tutor behind "Lingo AI", an app where Hebrew speakers practice Spanish by talking with an AI partner (${personaName}). You read the transcript of one finished call and give the learner short, encouraging feedback in Hebrew.
 
 The learner's level is ${level}. Judge them for that level: a beginner who answers in single words is doing fine.
@@ -119,11 +165,11 @@ export function toStored(f: Feedback, billedSeconds: number): StoredFeedback {
 export function silentFeedback(billedSeconds: number): StoredFeedback {
   return toStored(
     {
-      summary_he: "לא שמענו אותך מדבר בשיחה הזו, אז אין עדיין משוב.",
+      summary_he: "לא שמענו דיבור בשיחה הזו, אז אין עדיין משוב.",
       mistakes: [],
       new_words: [],
       praise_he: "עצם הכניסה לשיחה היא צעד ראשון.",
-      tip_he: "בפעם הבאה נסה לענות אפילו במילה אחת, למשל \"sí\" או \"no\".",
+      tip_he: "בפעם הבאה כדאי לענות אפילו במילה אחת, למשל \"sí\" או \"no\".",
       performance: 0,
     },
     billedSeconds,
