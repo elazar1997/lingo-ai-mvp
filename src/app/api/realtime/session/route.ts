@@ -84,7 +84,9 @@ export async function POST(request: Request) {
     });
     const detail = res ? (await res.text().catch(() => "")).slice(0, 500) : "network error";
     console.error("realtime call failed", res?.status, detail);
-    return apiError("UPSTREAM_ERROR");
+    // 429 means the OpenAI account is out of credit or over its limit: show the same
+    // "paused" message as our own budget cap rather than a retryable error.
+    return apiError(res?.status === 429 ? "BUDGET_LIMIT" : "UPSTREAM_ERROR");
   }
 
   return apiOk({
