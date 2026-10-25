@@ -3,7 +3,7 @@ import { apiError, apiOk, dbErrorCode } from "@/lib/api";
 import { sha256Hex } from "@/lib/crypto";
 import { env, isAdmin } from "@/lib/env";
 import { isPersonaId } from "@/lib/personas";
-import { buildInstructions, levelSpeed, personaVoice } from "@/lib/personas.server";
+import { buildInstructions, personaVoice } from "@/lib/personas.server";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
 
 const Body = z.object({ personaId: z.string().refine(isPersonaId), sdp: z.string().min(1).max(20_000) });
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           // eagerness gives learners time to search for words before the persona replies.
           turn_detection: { type: "semantic_vad", eagerness: "low" },
         },
-        output: { voice: personaVoice(personaId), speed: levelSpeed(profile.spanish_level) },
+        output: { voice: personaVoice(personaId) },
       },
     }),
   );

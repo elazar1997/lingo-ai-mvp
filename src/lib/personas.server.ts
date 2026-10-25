@@ -80,7 +80,7 @@ const PERSONA_VOICES: Record<PersonaId, string> = { lucia: "marin", vale: "coral
 // beginner gets slow, simple speech even from Vale.
 const BEGINNER = `
 # Learner level: beginner (this outranks everything in the character section above: the level comes before the personality)
-- Speak noticeably slower than normal, clearly, with small pauses between phrases. Never rush.
+- Calm, relaxed pace: speak clearly and naturally, never rushed, with a short natural pause after each micro-sentence. Do not stretch or drag out words.
 - Micro-sentences: three to five words each, basic everyday words, present tense only. Two sentences per turn at most.
 - End every turn with one closed question: yes/no ("¿Te gusta el café?") or A/B ("¿Café o té?"), so one word is a full answer. Never ask an open question like "¿Qué hiciste hoy?".
 - Reuse the same few words again and again during the call instead of adding new ones. Add at most one new word every few turns, and repeat it in your next turns so it sticks.
@@ -102,14 +102,6 @@ const LEVEL_HINT: Record<string, string> = {
   advanced:
     "# Learner level: advanced\n- Fully natural speech and pace, idioms and slang welcome. Stay in Spanish; explain unknown words in Spanish.",
 };
-
-// Realtime voice speed per level (1 is normal). Beginners hear a slower voice on top of
-// the prompt asking for slow speech.
-const LEVEL_SPEED: Record<string, number> = { beginner: 0.85, elementary: 0.85, intermediate: 1, advanced: 1 };
-
-export function levelSpeed(level: string): number {
-  return LEVEL_SPEED[level] ?? LEVEL_SPEED.beginner;
-}
 
 // A short line in each persona's voice, for comparing voices before choosing one.
 const SAMPLES: Record<PersonaId, { text: string; style: string }> = {
