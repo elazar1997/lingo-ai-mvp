@@ -1,7 +1,9 @@
+import { ChevronLeft, ChevronRight, Mic, Target } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteAccount } from "@/app/app/delete-account";
 import { LevelPicker } from "@/app/app/level-picker";
+import { SoundToggle } from "@/app/app/sound-toggle";
 import { pickerLevel } from "@/lib/levels";
 import { GOALS } from "@/lib/profile-options";
 import { requireUser, supabaseUser } from "@/lib/supabase/server";
@@ -14,37 +16,45 @@ export default async function SettingsPage() {
   const supabase = await supabaseUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("spanish_level, goal, daily_goal_minutes")
+    .select("spanish_level, goals, daily_goal_minutes")
     .eq("id", user.id)
     .maybeSingle();
-  const goal = GOALS.find((g) => g.id === profile?.goal);
+  const goals = GOALS.filter((g) => (profile?.goals ?? []).includes(g.id));
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <header className="flex items-center justify-between">
-        <Link href="/app" className="text-sm text-muted">
-          → למסלול
+        <Link href="/app" className="flex items-center gap-1 text-small text-muted">
+          <ChevronRight className="size-4" />
+          למסלול
         </Link>
-        <h1 className="font-bold">הגדרות</h1>
+        <h1 className="text-heading font-semibold">הגדרות</h1>
         <span className="w-12" />
       </header>
 
       <LevelPicker initial={pickerLevel(profile?.spanish_level)} />
-      <Link href="/app/call?placement=1" className="-mt-3 text-sm text-neon-purple underline">
-        לא בטוחים? מבחן רמה קולי של 2 דקות
+      <Link href="/app/call?placement=1" className="glass flex items-center gap-3 rounded-[var(--radius-card)] p-4">
+        <Mic className="size-5 text-neon-purple" />
+        <span className="flex flex-1 flex-col">
+          <span className="font-display font-semibold">מבחן רמה קולי</span>
+          <span className="text-small text-muted">שיחה של 2 דקות עם לוסיה, והרמה מתעדכנת לבד</span>
+        </span>
+        <ChevronLeft className="size-5 text-muted" />
       </Link>
 
-      <section className="flex items-center justify-between rounded-2xl bg-surface p-4">
-        <div className="flex flex-col">
-          <span className="font-bold">מטרה, נושאים ויעד יומי</span>
-          <span className="text-xs text-muted">
-            {goal ? `${goal.emoji} ${goal.labelHe}` : "לא נבחרה מטרה"} · {profile?.daily_goal_minutes ?? 10} דקות ביום
+      <Link href="/app/welcome" className="glass flex items-center gap-3 rounded-[var(--radius-card)] p-4">
+        <Target className="size-5 text-neon-green" />
+        <span className="flex flex-1 flex-col">
+          <span className="font-display font-semibold">מטרות, נושאים ויעד יומי</span>
+          <span className="text-small text-muted">
+            {goals.length ? goals.map((g) => `${g.emoji} ${g.labelHe}`).join(" · ") : "לא נבחרו מטרות"} ·{" "}
+            {profile?.daily_goal_minutes ?? 10} דקות ביום
           </span>
-        </div>
-        <Link href="/app/welcome" className="rounded-xl border border-line px-3 py-2 text-sm">
-          לשנות
-        </Link>
-      </section>
+        </span>
+        <ChevronLeft className="size-5 text-muted" />
+      </Link>
+
+      <SoundToggle />
 
       <div className="mt-auto">
         <DeleteAccount />

@@ -140,9 +140,10 @@ const INTEREST_EN: Record<string, string> = {
   nature: "nature", art: "art and design", family: "family and friends", travel: "travel", fashion: "fashion",
 };
 
-function learnerContext(goal: string | null | undefined, interests: string[] | null | undefined, inLesson: boolean) {
+function learnerContext(goals: string[] | null | undefined, interests: string[] | null | undefined, inLesson: boolean) {
   const lines: string[] = [];
-  if (goal && GOAL_TOPICS[goal]) lines.push(`- They are learning Spanish for ${GOAL_TOPICS[goal]}. When you pick topics or a new word, prefer ones that fit this.`);
+  const topics = (goals ?? []).map((g) => GOAL_TOPICS[g]).filter(Boolean);
+  if (topics.length) lines.push(`- They are learning Spanish for ${topics.join("; and for ")}. When you pick topics or a new word, prefer ones that fit this.`);
   const likes = (interests ?? []).map((i) => INTEREST_EN[i]).filter(Boolean);
   if (likes.length) lines.push(`- Their interests: ${likes.join(", ")}. Bring them up naturally now and then.`);
   if (!lines.length) return "";
@@ -179,7 +180,7 @@ export function buildInstructions(
   learner: {
     level: string;
     displayName?: string | null;
-    goal?: string | null;
+    goals?: string[] | null;
     interests?: string[] | null;
   },
   mode: CallMode = { kind: "free" },
@@ -200,7 +201,7 @@ export function buildInstructions(
     personaCard(id, mode.kind === "placement" ? "beginner" : learner.level),
     mode.kind === "placement" ? PLACEMENT : (LEVEL_HINT[learner.level] ?? LEVEL_HINT.beginner),
     name ? `The learner's first name is ${name}.` : "",
-    mode.kind === "placement" ? "" : learnerContext(learner.goal, learner.interests, mode.kind === "lesson"),
+    mode.kind === "placement" ? "" : learnerContext(learner.goals, learner.interests, mode.kind === "lesson"),
     mode.kind === "lesson" ? missionBlock(mode.lesson) : "",
     goal,
   ]

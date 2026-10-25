@@ -1,3 +1,4 @@
+import { Check, ChevronLeft, Flame, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/avatar";
@@ -49,25 +50,32 @@ export default async function AppHome() {
 
   return (
     <div className="flex flex-1 flex-col gap-5">
-      <header className="sticky top-0 z-20 -mx-4 -mt-6 flex flex-col gap-3 bg-bg/90 px-4 pb-3 pt-6 backdrop-blur">
+      <header className="glass-strong sticky top-2 z-20 flex flex-col gap-3 rounded-[var(--radius-card)] px-4 py-3">
         <div className="flex items-center justify-between">
           <Logo />
-          <div className="flex items-center gap-2 text-sm font-bold">
-            <span className="rounded-full bg-surface px-3 py-1 text-orange-300">🔥 {streak}</span>
-            <span className="rounded-full bg-surface px-3 py-1 text-neon-green">{progress?.xp_total ?? 0} XP</span>
-            <Link href="/app/settings" aria-label="הגדרות" className="rounded-full bg-surface px-2.5 py-1 text-muted">
-              ⚙
+          <div className="flex items-center gap-2 font-display font-semibold">
+            <span className={`flex items-center gap-1 rounded-full bg-white/8 px-3 py-1 ${streak ? "text-gold" : "text-muted"}`}>
+              <Flame className="size-4" fill={streak ? "currentColor" : "none"} />
+              {streak}
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-white/8 px-3 py-1 text-neon-green" dir="ltr">
+              <Zap className="size-4" fill="currentColor" />
+              {progress?.xp_total ?? 0}
+            </span>
+            <Link href="/app/settings" aria-label="הגדרות" className="rounded-full bg-white/8 p-1.5 text-muted">
+              <Settings className="size-4" />
             </Link>
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="flex justify-between text-xs text-muted">
-            <span>
-              יעד יומי: {Math.min(talkedMinutes, dailyGoal)}/{dailyGoal} דקות {goalShare >= 1 ? "✓" : ""}
+          <div className="flex justify-between text-small text-muted">
+            <span className="flex items-center gap-1">
+              יעד יומי: {Math.min(talkedMinutes, dailyGoal)}/{dailyGoal} דקות
+              {goalShare >= 1 && <Check className="size-3.5 text-neon-green" strokeWidth={3} />}
             </span>
             <span>{admin ? "מצב בדיקה: בלי מגבלה" : `נשארו ${minutesLeft} דקות היום`}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div className="glow-green h-full rounded-full bg-neon-green transition-all" style={{ width: `${goalShare * 100}%` }} />
           </div>
         </div>
@@ -77,17 +85,17 @@ export default async function AppHome() {
 
       <Link
         href="/app/free"
-        className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 transition active:scale-[0.98]"
+        className="btn-3d glass flex items-center gap-3 rounded-[var(--radius-card)] p-4"
       >
         <div className="flex -space-x-4 space-x-reverse">
           <Avatar persona="lucia" state="idle" size={44} />
           <Avatar persona="vale" state="idle" size={44} />
         </div>
         <span className="flex flex-col">
-          <span className="font-bold">שיחה חופשית</span>
-          <span className="text-xs text-muted">בלי משימה, על מה שבא לך</span>
+          <span className="font-display font-semibold">שיחה חופשית</span>
+          <span className="text-small text-muted">בלי משימה, על מה שבא לך</span>
         </span>
-        <span className="mr-auto text-muted">←</span>
+        <ChevronLeft className="mr-auto size-5 text-muted" />
       </Link>
     </div>
   );

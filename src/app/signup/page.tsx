@@ -35,7 +35,7 @@ export default function SignupPage() {
     return (
       <div className="flex flex-1 flex-col justify-center gap-4 text-center">
         <Logo />
-        <h1 className="text-2xl font-bold">בדוק את האימייל שלך</h1>
+        <h1 className="text-title font-bold">נשאר רק לבדוק את האימייל</h1>
         <p className="text-muted">אם הכל תקין, שלחנו לך קישור כניסה. הקישור פותח את החשבון ישר באפליקציה.</p>
       </div>
     );
@@ -44,16 +44,16 @@ export default function SignupPage() {
   return (
     <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-5">
       <Logo />
-      <h1 className="text-2xl font-bold">הצטרפות לבטא</h1>
+      <h1 className="text-title font-bold">הצטרפות לבטא</h1>
       <Field label="קוד הזמנה" name="inviteCode" required autoComplete="off" dir="ltr" />
       <Field label="אימייל" name="email" type="email" required autoComplete="email" dir="ltr" />
       <Field label="איך לקרוא לך? (לא חובה)" name="displayName" maxLength={40} />
       <Field label="שנת לידה" name="birthYear" type="number" required min={1900} max={maxYear} inputMode="numeric" dir="ltr" />
-      <label className="flex items-start gap-3 text-sm text-muted">
+      <label className="flex items-start gap-3 text-small text-muted">
         <input type="checkbox" name="ageConfirmed" required className="mt-1 size-5 accent-neon-purple" />
         אני בן או בת 18 ומעלה, ומאשר/ת שהקול שלי מעובד על ידי OpenAI לצורך השיחה, ושהתמלולים נשמרים מוצפנים ל-30 יום.
       </label>
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-small text-danger">{error}</p>}
       <Button type="submit" tone="green" disabled={status === "sending"} className="mt-auto">
         {status === "sending" ? "שולח..." : "שלחו לי קישור כניסה"}
       </Button>

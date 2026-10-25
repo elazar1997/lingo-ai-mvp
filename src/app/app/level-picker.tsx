@@ -16,7 +16,7 @@ export function LevelPicker({ initial }: { initial: LevelId }) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="font-bold">הרמה שלי בספרדית</h2>
+      <h2 className="font-display font-semibold">הרמה בספרדית</h2>
       <div role="radiogroup" className="grid grid-cols-3 gap-2">
         {LEVELS.map((l) => {
           const active = l.id === selected;
@@ -27,8 +27,8 @@ export function LevelPicker({ initial }: { initial: LevelId }) {
               role="radio"
               aria-checked={active}
               onClick={() => choose(l.id)}
-              className={`rounded-xl border px-2 py-2 text-sm font-bold transition ${
-                active ? "glow-green border-transparent bg-surface text-neon-green" : "border-line bg-surface"
+              className={`btn-3d glass rounded-[var(--radius-btn)] px-2 py-3 font-display font-medium ${
+                active ? "glow-green !border-transparent !bg-neon-green/10 text-neon-green" : ""
               }`}
             >
               {l.labelHe}
@@ -36,7 +36,7 @@ export function LevelPicker({ initial }: { initial: LevelId }) {
           );
         })}
       </div>
-      <p className="text-xs text-muted">{LEVELS.find((l) => l.id === selected)?.hintHe}</p>
+      <p className="text-small text-muted">{LEVELS.find((l) => l.id === selected)?.hintHe}</p>
     </section>
   );
 }

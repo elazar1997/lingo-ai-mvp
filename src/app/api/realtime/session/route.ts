@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("display_name, spanish_level, goal, interests")
+    .select("display_name, spanish_level, goals, interests")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) return apiError("PROFILE_MISSING");
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         {
           level: profile.spanish_level,
           displayName: profile.display_name,
-          goal: profile.goal,
+          goals: profile.goals,
           interests: profile.interests,
         },
         mode,

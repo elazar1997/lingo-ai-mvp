@@ -1,16 +1,18 @@
 "use client";
 
+import { Captions, CaptionsOff, Check, ChevronRight, Mic, MicOff, PhoneOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Avatar } from "@/components/avatar";
-import { Button } from "@/components/ui";
+import { Button, ButtonLink } from "@/components/ui";
 import type { Lesson } from "@/content/path-es";
 import { errorHe } from "@/lib/messages";
 import { wordsSaid } from "@/lib/mission";
 import type { Persona } from "@/lib/personas";
 import { avatarMood, initialCallState, reduceEvent } from "@/lib/realtime-events";
+import { vibrate } from "@/lib/sfx";
 
 type Phase = "ready" | "connecting" | "live" | "ending" | "ended" | "error";
 
@@ -211,6 +213,13 @@ export function CallScreen({
   );
   const missionReady = !!lesson && said.length >= lesson.need;
 
+  // A short buzz for each target word said (no sounds during a call: they would reach the mic).
+  const saidCount = useRef(0);
+  useEffect(() => {
+    if (said.length > saidCount.current) vibrate(missionReady ? [30, 50, 30] : 25);
+    saidCount.current = said.length;
+  }, [said.length, missionReady]);
+
   const mood = phase === "connecting" ? "thinking" : avatarMood(state);
   const mm = String(Math.floor(secondsLeft / 60));
   const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -218,25 +227,26 @@ export function CallScreen({
   return (
     <div className="flex flex-1 flex-col gap-4">
       <header className="flex items-center justify-between">
-        <Link href="/app" className="text-sm text-muted" onClick={() => void hangUp(false)}>
-          → חזרה
+        <Link href="/app" className="flex items-center gap-1 text-small text-muted" onClick={() => void hangUp(false)}>
+          <ChevronRight className="size-4" />
+          חזרה
         </Link>
         {phase === "live" && (
-          <span className="rounded-full bg-surface px-3 py-1 font-mono text-sm tabular-nums" dir="ltr">
+          <span className="glass rounded-full px-3 py-1 font-display font-semibold tabular-nums" dir="ltr">
             {mm}:{ss}
           </span>
         )}
       </header>
 
       {lesson && (
-        <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-3">
+        <section className="glass flex flex-col gap-2 rounded-[var(--radius-card)] p-3">
           <div className="flex items-center justify-between">
-            <b>{lesson.titleHe}</b>
-            <span className="text-xs text-muted tabular-nums">
+            <b className="font-display font-semibold">{lesson.titleHe}</b>
+            <span className="text-small text-muted tabular-nums">
               {said.length}/{lesson.need} מילים
             </span>
           </div>
-          <p className="text-sm text-muted">{lesson.goalHe}</p>
+          <p className="text-small text-muted">{lesson.goalHe}</p>
           <ul className="flex flex-wrap gap-1.5" dir="ltr">
             {lesson.words.map((w, i) => {
               const hit = said.includes(i);
@@ -246,11 +256,11 @@ export function CallScreen({
                   animate={hit ? { scale: [1, 1.18, 1] } : {}}
                   transition={{ duration: 0.35 }}
                   title={w.he}
-                  className={`rounded-full px-3 py-1 text-sm font-bold ${
-                    hit ? "glow-green bg-neon-green text-bg" : "bg-surface-2 text-ink"
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 font-display font-semibold ${
+                    hit ? "glow-green bg-neon-green text-bg" : "bg-white/8 text-ink"
                   }`}
                 >
-                  {hit ? "✓ " : ""}
+                  {hit && <Check className="size-3.5" strokeWidth={3.5} />}
                   {w.es}
                 </motion.li>
               );
@@ -259,15 +269,15 @@ export function CallScreen({
         </section>
       )}
       {placement && (
-        <p className="rounded-2xl bg-surface p-3 text-center text-sm text-muted">
+        <p className="glass rounded-[var(--radius-card)] p-3 text-center text-small text-muted">
           מבחן רמה: מדברים עם לוסיה כשתי דקות, והיא מתאימה את השאלות לתשובות. אין תשובות לא נכונות.
         </p>
       )}
 
       <section className="flex flex-col items-center gap-2 pt-2">
         <Avatar persona={persona.id} state={mood} size={lesson || placement ? 140 : 180} />
-        <h1 className="text-2xl font-bold">{persona.name}</h1>
-        <p className="text-sm text-muted">
+        <h1 className="text-title font-bold">{persona.name}</h1>
+        <p className="text-small text-muted">
           {phase === "ready" && persona.taglineHe}
           {phase === "connecting" && "מתחברים..."}
           {phase === "live" && (state.assistantSpeaking ? "מדברת" : state.userSpeaking ? "מקשיבה לך" : "תורך לדבר")}
@@ -277,9 +287,9 @@ export function CallScreen({
       </section>
 
       {captions && state.turns.length > 0 && (
-        <section className="flex max-h-[38dvh] flex-col gap-2 overflow-y-auto rounded-2xl bg-surface p-3 text-sm" dir="ltr">
+        <section className="glass flex max-h-[38dvh] flex-col gap-2 overflow-y-auto rounded-[var(--radius-card)] p-3" dir="ltr">
           {state.turns.map((t) => (
-            <p key={t.id} className={t.role === "user" ? "self-end rounded-xl bg-surface-2 px-3 py-2" : "px-1"}>
+            <p key={t.id} className={t.role === "user" ? "self-end rounded-[var(--radius-btn)] bg-neon-purple/20 px-3 py-2" : "px-1"}>
               {t.text}
             </p>
           ))}
@@ -288,13 +298,13 @@ export function CallScreen({
         </section>
       )}
 
-      {error && <p className="text-center text-sm text-danger">{error}</p>}
+      {error && <p className="text-center text-small text-danger">{error}</p>}
 
       <audio ref={audio} autoPlay playsInline />
 
       <div className="mt-auto flex flex-col gap-3">
         {(phase === "ready" || phase === "error") && (
-          <Button tone={persona.accent} onClick={start}>
+          <Button tone={persona.accent} glow onClick={start}>
             {phase === "error"
               ? "לנסות שוב"
               : lesson
@@ -307,33 +317,40 @@ export function CallScreen({
         {phase === "live" && (
           <>
             <div className="flex gap-3">
-              <button onClick={toggleMute} className="h-12 flex-1 rounded-2xl border border-line">
+              <Button tone="ghost" onClick={toggleMute} className="flex-1">
+                {muted ? <MicOff className="size-5 text-gold" /> : <Mic className="size-5" />}
                 {muted ? "להפעיל מיקרופון" : "השתקה"}
-              </button>
-              <button onClick={() => setCaptions((c) => !c)} className="h-12 flex-1 rounded-2xl border border-line">
-                {captions ? "להסתיר כתוביות" : "להציג כתוביות"}
-              </button>
+              </Button>
+              <Button tone="ghost" onClick={() => setCaptions((c) => !c)} className="flex-1">
+                {captions ? <CaptionsOff className="size-5" /> : <Captions className="size-5" />}
+                {captions ? "בלי כתוביות" : "כתוביות"}
+              </Button>
             </div>
             {missionReady ? (
               <motion.button
                 onClick={() => void hangUp()}
                 animate={{ scale: [1, 1.04, 1] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
-                className="glow-green h-12 rounded-2xl bg-neon-green font-bold text-bg"
+                className="btn-3d glow-green flex h-13 items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-neon-green font-display text-[17px] font-semibold text-bg [--edge:var(--color-neon-green-deep)]"
               >
-                סיום שיעור ✓
+                <Check className="size-5" strokeWidth={3} />
+                סיום שיעור
               </motion.button>
             ) : (
-              <button onClick={() => void hangUp()} className="h-12 rounded-2xl bg-danger font-bold text-bg">
+              <button
+                onClick={() => void hangUp()}
+                className="btn-3d flex h-13 items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-danger font-display text-[17px] font-semibold text-bg [--edge:#b8324f]"
+              >
+                <PhoneOff className="size-5" />
                 {lesson ? "לסיים עכשיו" : "לסיים שיחה"}
               </button>
             )}
           </>
         )}
         {phase === "ended" && (
-          <Link href="/app" className="flex h-12 items-center justify-center rounded-2xl border border-line">
+          <ButtonLink tone="ghost" href="/app">
             חזרה למסך הבית
-          </Link>
+          </ButtonLink>
         )}
       </div>
     </div>

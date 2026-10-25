@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Lingo AI: dark by default, neon purple and green for calls to action. */
+/* Lingo AI: dark glass with neon purple and green, gold for rewards. */
 @theme {
   --color-bg: #0b0b14;
   --color-surface: #151526;
@@ -9,9 +9,25 @@
   --color-ink: #f2f2fa;
   --color-muted: #9a9ab8;
   --color-neon-purple: #b14bff;
+  --color-neon-purple-deep: #7a22c4;
   --color-neon-green: #39ff88;
+  --color-neon-green-deep: #1fae5a;
+  --color-gold: #ffc94a;
+  --color-gold-deep: #c98f14;
   --color-danger: #ff5c7a;
-  --font-sans: var(--font-heebo), system-ui, sans-serif;
+  --font-sans: var(--font-rubik), system-ui, sans-serif;
+  --font-display: var(--font-fredoka), var(--font-rubik), system-ui, sans-serif;
+  --radius-card: 24px;
+  --radius-btn: 16px;
+  /* Type scale: 28 / 20 / 16 / 13. */
+  --text-title: 28px;
+  --text-title--line-height: 1.2;
+  --text-heading: 20px;
+  --text-heading--line-height: 1.3;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-small: 13px;
+  --text-small--line-height: 1.4;
 }
 
 html {
@@ -25,10 +41,69 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+/* Two soft neon blobs behind everything. */
+.bg-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40vmax 40vmax at 85% -5%, rgb(177 75 255 / 0.22), transparent 70%),
+    radial-gradient(35vmax 35vmax at 0% 105%, rgb(57 255 136 / 0.12), transparent 70%);
+}
+
+/* Glass: at most two layers per screen. */
+@utility glass {
+  background: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@utility glass-strong {
+  background: rgb(21 21 38 / 0.82);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
 @utility glow-purple {
   box-shadow: 0 0 0 1px var(--color-neon-purple), 0 0 24px -4px var(--color-neon-purple);
 }
 
 @utility glow-green {
   box-shadow: 0 0 0 1px var(--color-neon-green), 0 0 24px -4px var(--color-neon-green);
+}
+
+@utility glow-gold {
+  box-shadow: 0 0 20px -4px var(--color-gold);
+}
+
+/* 3D button: a darker bottom edge that the button presses into. */
+@utility btn-3d {
+  box-shadow: 0 4px 0 var(--edge, rgb(0 0 0 / 0.4));
+  transform: translateY(0);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+  &:active:not(:disabled) {
+    box-shadow: 0 0 0 var(--edge, rgb(0 0 0 / 0.4));
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

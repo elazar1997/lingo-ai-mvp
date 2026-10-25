@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { Check, Lock, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { Button, ButtonLink } from "@/components/ui";
@@ -36,12 +37,12 @@ export function LearningPath({
         const done = unit.lessons.filter((l) => states[l.id] === "done").length;
         return (
           <section key={unit.id} className="flex flex-col gap-6">
-            <div className="flex items-center justify-between rounded-2xl bg-gradient-to-l from-neon-purple/30 to-surface p-4">
+            <div className="glass flex items-center justify-between rounded-[var(--radius-card)] bg-gradient-to-l from-neon-purple/25 to-transparent p-4">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-neon-purple">יחידה {u + 1}</span>
-                <span className="text-lg font-extrabold">{unit.titleHe}</span>
+                <span className="text-small font-medium text-neon-purple">יחידה {u + 1}</span>
+                <span className="font-display text-heading font-semibold">{unit.titleHe}</span>
               </div>
-              <span className="rounded-full bg-bg/60 px-3 py-1 text-sm font-bold tabular-nums" dir="ltr">
+              <span className="rounded-full bg-black/30 px-3 py-1 font-display font-semibold tabular-nums" dir="ltr">
                 {done}/{unit.lessons.length}
               </span>
             </div>
@@ -54,7 +55,7 @@ export function LearningPath({
                   <div key={lesson.id} className="relative flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
                     {state === "current" && (
                       <motion.span
-                        className="absolute -top-9 z-10 whitespace-nowrap rounded-xl bg-neon-purple px-3 py-1 text-xs font-bold text-bg"
+                        className="absolute -top-9 z-10 whitespace-nowrap rounded-full bg-neon-purple px-3 py-1 font-display text-small font-semibold text-white"
                         animate={{ y: [0, -4, 0] }}
                         transition={{ duration: 1.6, repeat: Infinity }}
                       >
@@ -103,12 +104,12 @@ function Node({
   label: string;
 }) {
   const look = {
-    done: "bg-neon-green text-bg glow-green",
-    current: "bg-neon-purple text-bg glow-purple",
-    open: "bg-surface border-2 border-neon-purple text-neon-purple",
+    done: "bg-neon-green text-bg [--edge:var(--color-neon-green-deep)]",
+    current: "bg-neon-purple text-white glow-purple [--edge:var(--color-neon-purple-deep)]",
+    open: "glass border-2 !border-neon-purple text-neon-purple",
     locked: "bg-surface-2 text-muted",
   }[state];
-  const icon = { done: "✓", current: "★", open: "★", locked: "🔒" }[state];
+  const Icon = { done: Check, current: Star, open: Star, locked: Lock }[state];
   return (
     <div className="relative">
       {state === "current" && (
@@ -124,9 +125,9 @@ function Node({
         onClick={onClick}
         whileTap={{ scale: 0.92 }}
         aria-label={label}
-        className={`relative flex size-[76px] items-center justify-center rounded-full text-3xl font-extrabold shadow-[0_6px_0_rgba(0,0,0,0.35)] ${look}`}
+        className={`relative flex size-[76px] items-center justify-center rounded-full shadow-[0_6px_0_var(--edge,rgba(0,0,0,0.35))] ${look}`}
       >
-        {icon}
+        <Icon className="size-8" strokeWidth={state === "done" ? 3.5 : 2.5} fill={state === "current" ? "currentColor" : "none"} />
       </motion.button>
     </div>
   );
@@ -135,11 +136,9 @@ function Node({
 function Stars({ count, dim }: { count: number; dim: boolean }) {
   if (dim && count === 0) return <span className="h-4" />;
   return (
-    <span className="mt-1 flex gap-0.5 text-sm" aria-label={`${count} כוכבים`}>
+    <span className="mt-1 flex gap-0.5" aria-label={`${count} כוכבים`}>
       {[1, 2, 3].map((i) => (
-        <span key={i} className={i <= count ? "text-yellow-300" : "text-line"}>
-          ★
-        </span>
+        <Star key={i} className={`size-4 ${i <= count ? "text-gold" : "text-line"}`} fill="currentColor" />
       ))}
     </span>
   );
@@ -162,7 +161,7 @@ function LessonSheet({
   return (
     <>
       <motion.div
-        className="fixed inset-0 z-30 bg-black/60"
+        className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -171,18 +170,18 @@ function LessonSheet({
       <motion.div
         role="dialog"
         aria-label={lesson.titleHe}
-        className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-md flex-col gap-4 rounded-t-3xl border-t border-line bg-surface p-5 pb-8"
+        className="glass-strong fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-md flex-col gap-4 rounded-t-[var(--radius-card)] p-5 pb-8"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
       >
-        <div className="mx-auto h-1.5 w-12 rounded-full bg-line" />
+        <div className="mx-auto h-1.5 w-12 rounded-full bg-white/20" />
         <div className="flex items-center gap-3">
           <Avatar persona={persona.id} state="idle" size={64} />
           <div className="flex flex-col">
-            <h2 className="text-xl font-extrabold">{lesson.titleHe}</h2>
-            <span className="text-sm text-muted">
+            <h2 className="text-heading font-semibold">{lesson.titleHe}</h2>
+            <span className="text-small text-muted">
               עם {persona.name} · {lesson.sceneHe}
             </span>
           </div>
@@ -192,26 +191,29 @@ function LessonSheet({
           {lesson.goalHe}
         </p>
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted">
+          <span className="text-small text-muted">
             מילים להשתמש בהן ({lesson.need} מתוך {lesson.words.length} כדי לעבור):
           </span>
           <ul className="flex flex-wrap gap-2">
             {lesson.words.map((w) => (
-              <li key={w.es} className="flex flex-col rounded-xl bg-surface-2 px-3 py-1.5">
-                <b dir="ltr" className="text-left">
+              <li key={w.es} className="flex flex-col rounded-[var(--radius-btn)] bg-white/8 px-3 py-1.5">
+                <b dir="ltr" className="text-left font-display font-semibold">
                   {w.es}
                 </b>
-                <span className="text-xs text-muted">{w.he}</span>
+                <span className="text-small text-muted">{w.he}</span>
               </li>
             ))}
           </ul>
         </div>
         {state === "locked" ? (
-          <Button disabled>🔒 קודם מסיימים את השיעור הקודם</Button>
+          <Button tone="ghost" disabled>
+            <Lock className="size-4" />
+            קודם מסיימים את השיעור הקודם
+          </Button>
         ) : disabled ? (
-          <Button disabled>נגמרו הדקות להיום</Button>
+          <Button tone="ghost" disabled>נגמרו הדקות להיום</Button>
         ) : (
-          <ButtonLink tone={state === "done" ? "purple" : "green"} href={`/app/call?lesson=${lesson.id}`}>
+          <ButtonLink tone={state === "done" ? "purple" : "green"} glow href={`/app/call?lesson=${lesson.id}`}>
             {state === "done" ? (stars < 3 ? "לשפר כוכבים" : "לתרגל שוב") : "בואו נדבר"}
           </ButtonLink>
         )}

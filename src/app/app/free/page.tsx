@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PersonaPicker } from "@/app/app/persona-picker";
@@ -15,14 +16,15 @@ export default async function FreeTalkPage() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <header className="flex items-center justify-between">
-        <Link href="/app" className="text-sm text-muted">
-          → למסלול
+        <Link href="/app" className="flex items-center gap-1 text-small text-muted">
+          <ChevronRight className="size-4" />
+          למסלול
         </Link>
-        <h1 className="font-bold">שיחה חופשית</h1>
+        <h1 className="text-heading font-semibold">שיחה חופשית</h1>
         <span className="w-12" />
       </header>
       <PersonaPicker initial={profile?.preferred_persona === "vale" ? "vale" : "lucia"} disabled={false} />
-      {isAdmin(user.email) && <p className="text-center text-xs text-muted">מצב בדיקה: אין מגבלת דקות יומית.</p>}
+      {isAdmin(user.email) && <p className="text-center text-small text-muted">מצב בדיקה: אין מגבלת דקות יומית.</p>}
     </div>
   );
 }

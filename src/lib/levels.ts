@@ -1,9 +1,9 @@
 // Spanish levels a learner can pick. The database also allows "elementary", which the
 // picker shows as beginner, so older profiles keep working.
 export const LEVELS = [
-  { id: "beginner", labelHe: "מתחיל", hintHe: "לאט, מילים בסיסיות, עזרה בעברית" },
-  { id: "intermediate", labelHe: "בינוני", hintHe: "קצב רגיל, משפטים פשוטים" },
-  { id: "advanced", labelHe: "מתקדם", hintHe: "שיחה טבעית ומהירה" },
+  { id: "beginner", labelHe: "מתחילים", hintHe: "לאט, מילים בסיסיות, עזרה בעברית" },
+  { id: "intermediate", labelHe: "ביניים", hintHe: "קצב רגיל, משפטים פשוטים" },
+  { id: "advanced", labelHe: "מתקדמים", hintHe: "שיחה טבעית ומהירה" },
 ] as const;
 
 export type LevelId = (typeof LEVELS)[number]["id"];

@@ -13,7 +13,7 @@ export default function Home() {
           <Avatar persona="lucia" state="idle" size={112} />
           <Avatar persona="vale" state="laughing" size={112} />
         </div>
-        <h1 className="text-3xl font-extrabold leading-tight">
+        <h1 className="text-[34px] font-bold leading-tight">
           מדברים ספרדית
           <br />
           <span className="text-neon-purple">מהיום הראשון</span>
@@ -24,13 +24,13 @@ export default function Home() {
       </section>
 
       <div className="flex flex-col gap-3">
-        <ButtonLink href="/signup" tone="green">
+        <ButtonLink href="/signup" tone="green" glow>
           יש לי קוד הזמנה
         </ButtonLink>
-        <ButtonLink href="/login" className="!bg-transparent !text-ink !shadow-none border border-line">
-          כבר רשום? התחברות
+        <ButtonLink href="/login" tone="ghost">
+          כבר יש חשבון? התחברות
         </ButtonLink>
-        <p className="text-center text-xs text-muted">הבטא פתוחה למוזמנים בלבד, מגיל 18 ומעלה.</p>
+        <p className="text-center text-small text-muted">הבטא פתוחה למוזמנים בלבד, מגיל 18 ומעלה.</p>
       </div>
     </div>
   );
