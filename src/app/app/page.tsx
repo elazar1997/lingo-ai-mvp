@@ -17,7 +17,7 @@ export default async function AppHome() {
 
   const [{ data: profile }, { data: progress }, { data: today }] = await Promise.all([
     supabase.from("profiles").select("display_name, preferred_persona, spanish_level").eq("id", user.id).maybeSingle(),
-    supabase.from("progress").select("xp_total, streak_days").eq("user_id", user.id).maybeSingle(),
+    supabase.from("progress").select("xp_total, streak_days, last_active_date").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("sessions")
       .select("billed_seconds, max_seconds")
@@ -25,6 +25,7 @@ export default async function AppHome() {
   ]);
 
   const usedSeconds = (today ?? []).reduce((s, r) => s + (r.billed_seconds ?? r.max_seconds), 0);
+  const streak = streakToShow(progress?.streak_days ?? 0, progress?.last_active_date ?? null);
   const minutesLeft = Math.max(0, Math.floor(DAILY_MINUTES - usedSeconds / 60));
 
   return (
@@ -32,7 +33,7 @@ export default async function AppHome() {
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex gap-2 text-sm">
-          <span className="rounded-full bg-surface px-3 py-1">🔥 {progress?.streak_days ?? 0}</span>
+          <span className="rounded-full bg-surface px-3 py-1">🔥 {streak}</span>
           <span className="rounded-full bg-surface px-3 py-1 text-neon-green">{progress?.xp_total ?? 0} XP</span>
         </div>
       </header>
@@ -57,4 +58,12 @@ function startOfIsraelDay(): Date {
   const offsetMs = local.getTime() - now.getTime();
   local.setHours(0, 0, 0, 0);
   return new Date(local.getTime() - offsetMs);
+}
+
+// A streak still counts until the end of the day after the last call (Israel days).
+function streakToShow(days: number, lastActive: string | null): number {
+  if (!lastActive) return 0;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  return lastActive >= yesterday ? days : 0;
 }

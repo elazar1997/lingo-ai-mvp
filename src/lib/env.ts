@@ -27,6 +27,9 @@ const schema = z.object({
   // Enables /api/admin/persona-test when set (at least 24 characters).
   PERSONA_TEST_KEY: z.string().min(24).optional(),
   PERSONA_TEST_MODEL: z.string().default("gpt-5-mini"),
+  // Reads finished calls and writes feedback (summary, mistakes, new words, XP bonus).
+  // The full model writes noticeably better Hebrew than mini, for about 1-2 cents a call.
+  TUTOR_MODEL: z.string().default("gpt-5"),
 });
 
 export type Env = z.infer<typeof schema>;

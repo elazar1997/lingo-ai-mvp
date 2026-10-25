@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui";
@@ -20,6 +21,7 @@ export function CallScreen({ persona }: { persona: Persona }) {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [muted, setMuted] = useState(false);
   const [captions, setCaptions] = useState(true);
+  const router = useRouter();
 
   const pc = useRef<RTCPeerConnection | null>(null);
   const dc = useRef<RTCDataChannel | null>(null);
@@ -60,10 +62,12 @@ export function CallScreen({ persona }: { persona: Persona }) {
     mic.current = null;
   }, []);
 
-  const hangUp = useCallback(async () => {
+  // Ends the call; by default then opens the tutor's summary for it.
+  const hangUp = useCallback(async (toSummary = true) => {
     if (!session.current) return;
     setPhase("ending");
     const body = endPayload();
+    const id = session.current.id;
     session.current = null;
     teardown();
     if (body) {
@@ -72,7 +76,8 @@ export function CallScreen({ persona }: { persona: Persona }) {
       );
     }
     setPhase("ended");
-  }, [endPayload, teardown]);
+    if (toSummary && body) router.push(`/app/summary/${id}`);
+  }, [endPayload, teardown, router]);
 
   // Closing the tab still ends the session, so its minutes and cost are booked.
   useEffect(() => {
@@ -177,7 +182,7 @@ export function CallScreen({ persona }: { persona: Persona }) {
       setPhase("live");
     } catch {
       setError(errorHe("UPSTREAM_ERROR"));
-      if (session.current) await hangUp();
+      if (session.current) await hangUp(false);
       else teardown();
       setPhase("error");
     }
@@ -196,7 +201,7 @@ export function CallScreen({ persona }: { persona: Persona }) {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <header className="flex items-center justify-between">
-        <Link href="/app" className="text-sm text-muted" onClick={() => void hangUp()}>
+        <Link href="/app" className="text-sm text-muted" onClick={() => void hangUp(false)}>
           → חזרה
         </Link>
         {phase === "live" && (
@@ -214,7 +219,7 @@ export function CallScreen({ persona }: { persona: Persona }) {
           {phase === "connecting" && "מתחברים..."}
           {phase === "live" && (state.assistantSpeaking ? "מדברת" : state.userSpeaking ? "מקשיבה לך" : "תורך לדבר")}
           {phase === "ending" && "מסיימים..."}
-          {phase === "ended" && "השיחה הסתיימה. ¡Hasta luego!"}
+          {phase === "ended" && "השיחה הסתיימה. מכינים לך סיכום..."}
         </p>
       </section>
 

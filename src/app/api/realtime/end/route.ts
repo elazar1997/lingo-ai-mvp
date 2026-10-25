@@ -1,9 +1,11 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { apiError, apiOk, dbErrorCode } from "@/lib/api";
 import { realtimeCostUsd, type RealtimeUsage } from "@/lib/cost";
 import { encrypt } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { requireUser, supabaseAdmin } from "@/lib/supabase/server";
+import { runTutor } from "@/lib/tutor.server";
 
 const n = z.number().int().min(0).max(10_000_000).optional();
 
@@ -28,8 +30,11 @@ const Body = z.object({
     .default([]),
 });
 
-// Closes a conversation, books its cost and stores the encrypted transcript.
-// The tutor agent (stage 3) will read the transcript from here.
+export const maxDuration = 60;
+
+// Closes a conversation, books its cost and stores the encrypted transcript, then runs
+// the tutor in the background once the response is sent. The summary screen polls
+// /api/feedback/[sessionId] until the tutor's feedback is there.
 export async function POST(request: Request) {
   const user = await requireUser();
   if (!user) return apiError("UNAUTHENTICATED");
@@ -58,6 +63,8 @@ export async function POST(request: Request) {
       ciphertext: encrypt(JSON.stringify(transcript), e.TRANSCRIPT_ENCRYPTION_KEY),
     });
   }
+
+  after(() => runTutor({ userId: user.id, sessionId, turns: transcript }));
 
   return apiOk({ ok: true });
 }
