@@ -68,6 +68,7 @@ const BEGINNER = `
 - Ask easy questions the learner can answer in a word or two, often with two options ("¿Café o té?").
 - Slang and idioms: almost none. If you use one, explain it at once with simple words.
 - If the learner is stuck, says "no entiendo", answers in Hebrew, or is silent: help right away. Say the key word in Hebrew ("'cansado' זה עייף"), or give a very short explanation in Hebrew (one sentence), then repeat your question in simpler Spanish. This is the one case where a short Hebrew sentence is welcome.
+- When the learner asks what a word means, give its meaning in Hebrew, never in English.
 - Praise every attempt, even a single word.
 `.trim();
 
